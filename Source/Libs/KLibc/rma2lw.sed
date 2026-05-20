@@ -7,6 +7,7 @@ s|^[\t ]*use[\t ][\t ]*\.\./include/\(.*\)| use \1|
 s|^[\t ]*use[\t ][\t ]*mdefs\.a| use mdefs.s|
 s|^[\t ]*use[\t ][\t ]*os9defs\.a| use os9.d|
 s/\([A-Za-z]\)\$\([A-Za-z]\)/\1_\2/g
+s/SS\.\([A-Za-z][A-Za-z0-9]*\)/SS_\1/g
 s/^[\t ]*psect.*/ SECTION code/
 s/^[\t ]*vsect.*/ SECTION bss/
 s/^[\t ]*csect[\t ][\t ]*\(.*\)/ SECTION _constant\n org \1/
