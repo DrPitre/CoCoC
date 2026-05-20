@@ -1,5 +1,5 @@
 OFILES	= prof.o pwent.o getopt.o adump.o defdrive.o popen.o \
- asctime.o ctime.o systime.o time.o localtime.o mktime.o isleap.o timevars.o
+ asctime.o ctime.o time.o localtime.o mktime.o isleap.o timevars.o
 
 all: cstuff.lib
 

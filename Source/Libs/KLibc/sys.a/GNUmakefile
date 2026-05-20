@@ -1,5 +1,5 @@
 OFILES1 = abort.o signal.o chown.o chmod.o stat.o access.o create.o
-OFILES2 = open.o read.o write.o lseek.o misc.o mod.o dir.o brk.o ibrk.o sbrk.o mem.o
+OFILES2 = open.o read.o write.o io.o misc.o mod.o dir.o brk.o ibrk.o sbrk.o mem.o
 OFILES3 = time.o process.o id.o intercept.o syscall.o syscommon.o
 OFILES4 = cfinish.o profdummy.o tidyup.o
 

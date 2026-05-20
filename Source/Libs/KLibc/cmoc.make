@@ -14,16 +14,28 @@ O2U?=	tr '\015' '\012'
 #our scripts
 DCCMOC	= $(TOP)/dccmoc.sed
 RMA2LW	= $(TOP)/rma2lw.sed
-DCC_DEFS?= $(TOP)/../../../Defs
+CMOC_RMA2LW	= $(TOP)/cmoc-rma2lw.sed
+CMOC_ALIAS	= $(TOP)/cmoc-alias-asm.awk
+CMOC_DEDUPE	= $(TOP)/cmoc-dedupe-asm.awk
 
-ifneq ($(strip $(CMOC_OS9_DIR)),)
-CMOC_OS9_LIB	= $(CMOC_OS9_DIR)/lib
-DCC_DEFS	= $(CMOC_OS9_DIR)/include
-vpath %.as $(CMOC_OS9_LIB)
-vpath %.c $(CMOC_OS9_LIB)
+ifeq ($(strip $(CMOC_OS9_DIR)),)
+ifneq ($(filter clean dskclean,$(MAKECMDGOALS)),$(MAKECMDGOALS))
+$(error CMOC_OS9_DIR must point to the cmoc_os9 tree)
+endif
 endif
 
+CMOC_OS9_LIB	= $(CMOC_OS9_DIR)/lib
+DCC_DEFS	= $(CMOC_OS9_DIR)/include
+
 # implicit rules to compile with DCC/lwasm
+%.o: $(CMOC_OS9_LIB)/%.c
+	CDEF=$(DCC_DEFS) $(DCC) -L $(DCCFLAGS) -r -f=$@ $<
+
+%.o: $(CMOC_OS9_LIB)/%.as $(CMOC_RMA2LW) $(DCCMOC) $(CMOC_ALIAS) $(CMOC_DEDUPE)
+	$(O2U) < $< | $(SED) -f $(CMOC_RMA2LW) | $(SED) -f $(DCCMOC) | awk -f $(CMOC_ALIAS) | awk -f $(CMOC_DEDUPE) > $*.s
+	$(LWASM) $(AFLAGS) --obj -o $@ $*.s
+	$(RM) $*.s
+
 %.s: %.as $(RMA2LW)
 	$(O2U) < $< | $(SED) -f $(RMA2LW) > $@
 

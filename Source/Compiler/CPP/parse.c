@@ -122,14 +122,14 @@ getword(word,count)
 register char	*word;
 register int	count;
 {
-	while(--count > 0 && (isalnum(cch) || cch == '_')) {
+	while(--count > 0 && (isalnum(cch) || cch == '_' || cch == '$')) {
 		*word++ = cch;
 		gch(KEEPSP);
 	}
 	*word = '\0';
 
 /* eat any excess chars from word */
-	while(isalnum(cch) || cch == '_')
+	while(isalnum(cch) || cch == '_' || cch == '$')
 		gch(KEEPSP);
 }
 

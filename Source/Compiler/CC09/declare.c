@@ -31,16 +31,6 @@ static int is_void_name(void)
             && strncmp(((symnode *) symval)->sname, "void", NAMESIZE) == 0;
 }
 
-static void skip_proto_list(void)
-{
-    int level;
-
-    for (level = 1; level && sym != EOF; getsym()) {
-        if (sym == LPAREN) ++level;
-        else if (sym == RPAREN) --level;
-    }
-}
-
 #ifdef FUNCNAME
 direct int fnline;
 #endif
@@ -556,12 +546,56 @@ int block(int stkadj)
 int declist(register symnode **list)
 {
     register symnode *ptr,*last;
+    symnode *ptemp;
+    dimnode *dimptr;
+    cval_t size;
+    elem *eptr;
+    int type,temp;
 
     *list = NULL;
     getsym();
 
     if (istype() || is_void_name()) {
-        skip_proto_list();
+        for (;;) {
+            if (sym == RPAREN) break;
+            if (sym == DOT) {
+                while (sym != RPAREN && sym != EOF) getsym();
+                break;
+            }
+            if ((type = settype(&size,&dimptr,&eptr)) == UNDECL) type = INT;
+            if (sym == RPAREN && type == INT && is_void_name() == 0) break;
+            temp = declarator(&ptemp,&dimptr,type);
+            ptr = ptemp;
+            if (ptr) {
+                symnode *scan;
+
+                if (isftn(temp) || temp == STRUCT || temp == USTRUCT)
+                    error("argument error");
+                else if (isary(temp)) {
+                    temp = incref(decref(temp));
+                    dimptr = dimptr ? dimptr->dptr : 0;
+                }
+#ifdef DOFLOATS
+                else if (temp == FLOAT) temp = DOUBLE;
+#endif
+                for (scan = *list; scan && scan != ptr; scan = scan->snext) ;
+                if (scan) error("named twice");
+                else if (ptr->type != UNDECL || ptr->storage == ARG)
+                    pushdown(ptr);
+                ptr->type = temp;
+                ptr->storage = ARG;
+                ptr->blklev = 1;
+                ptr->x.elems = eptr;
+                sizeup(ptr,dimptr,size);
+                if (*list) last->snext = ptr;
+                else *list = ptr;
+                ptr->snext = NULL;
+                last = ptr;
+            }
+            if (sym != COMMA) break;
+            getsym();
+        }
+        need(RPAREN);
         return;
     }
 

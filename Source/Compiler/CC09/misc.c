@@ -200,6 +200,8 @@ int istype(void)
                 return 1;
         }
     else if (sym == NAME) {
+        if (strncmp(((symnode *)symval)->sname, "void", NAMESIZE) == 0)
+            return 1;
         if (((symnode *)symval)->storage == TYPEDEF) return 1;
     }
     return 0;

@@ -10,6 +10,16 @@ DEFDIR=${DEFDIR:-"$DCCDIR/defs"}
 LIBDIR=${LIBDIR:-"$DCCDIR/lib"}
 CC=${CC:-clang}
 MAKE=${MAKE:-/usr/bin/gnumake}
+CMOC_OS9_DIR=${CMOC_OS9_DIR:-}
+
+if [ -z "$CMOC_OS9_DIR" ]; then
+	for candidate in "$ROOT/../coco-shelf/cmoc_os9" "$ROOT/../cmoc_os9"; do
+		if [ -d "$candidate/include" ] && [ -d "$candidate/lib" ]; then
+			CMOC_OS9_DIR=$candidate
+			break
+		fi
+	done
+fi
 
 if [ ! -x "$MAKE" ]; then
 	echo "error: GNU make not found at $MAKE" >&2
@@ -19,6 +29,12 @@ fi
 
 if ! command -v "$CC" >/dev/null 2>&1; then
 	echo "error: compiler '$CC' not found on PATH" >&2
+	exit 1
+fi
+
+if [ -z "$CMOC_OS9_DIR" ] || [ ! -d "$CMOC_OS9_DIR/include" ] || [ ! -d "$CMOC_OS9_DIR/lib" ]; then
+	echo "error: CMOC_OS9_DIR must point to a cmoc_os9 tree with include/ and lib/" >&2
+	echo "Example: CMOC_OS9_DIR=/path/to/coco-shelf/cmoc_os9 ./install-dcc-macos.sh" >&2
 	exit 1
 fi
 
@@ -89,12 +105,12 @@ install_file 0644 "$ROOT/Source/Compiler/COpt/level2.patterns" "$DCCDIR/level2.p
 install_file 0644 "$ROOT/Source/Compiler/DCC/dcc.hlp" "$DCCDIR/dcc.hlp"
 
 echo "Installing target include files into $DEFDIR"
-( cd "$ROOT/Defs" && find . -type d -exec mkdir -p "$DEFDIR/{}" \; )
-( cd "$ROOT/Defs" && find . -type f -exec install -m 0644 "{}" "$DEFDIR/{}" \; )
+( cd "$CMOC_OS9_DIR/include" && find . -type d -exec mkdir -p "$DEFDIR/{}" \; )
+( cd "$CMOC_OS9_DIR/include" && find . -type f -exec install -m 0644 "{}" "$DEFDIR/{}" \; )
 
 echo "Building LWTOOLS target library files"
-( cd "$ROOT/Source/Libs/KLibc" && PATH="$BINDIR:$PATH" "$MAKE" clean )
-( cd "$ROOT/Source/Libs/KLibc" && PATH="$BINDIR:$PATH" "$MAKE" )
+( cd "$ROOT/Source/Libs/KLibc" && PATH="$BINDIR:$PATH" "$MAKE" CMOC_OS9_DIR="$CMOC_OS9_DIR" clean )
+( cd "$ROOT/Source/Libs/KLibc" && PATH="$BINDIR:$PATH" "$MAKE" CMOC_OS9_DIR="$CMOC_OS9_DIR" )
 
 echo "Installing LWTOOLS target library files into $LIBDIR"
 rm -f "$LIBDIR"/cstart.r "$LIBDIR"/clib.l "$LIBDIR"/clibt.l "$LIBDIR"/sys.l "$LIBDIR"/dbg.l "$LIBDIR"/cgfx.l "$LIBDIR"/lexlib.l "$LIBDIR"/malloc.r "$LIBDIR"/libdbg.a "$LIBDIR"/level1.patterns "$LIBDIR"/level2.patterns
@@ -113,6 +129,7 @@ echo "Installed DCC support files:"
 echo "  $DCCDIR"
 echo "  $DEFDIR"
 echo "  $LIBDIR"
+echo "  cmoc_os9 source: $CMOC_OS9_DIR"
 echo
 echo "Make sure this directory is on PATH:"
 echo "  export PATH=\"$BINDIR:\$PATH\""

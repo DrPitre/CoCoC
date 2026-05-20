@@ -494,6 +494,7 @@ int number(int type, register numptrs np)
     long i;
     double n;
     int exp, esign, digcount = 0;
+    int long_suffix, unsigned_suffix;
     register char *cp;
 
     i = 0;
@@ -521,8 +522,13 @@ int number(int type, register numptrs np)
                 getch();
             }
 
-        if (cc == 'L' || cc == 'l') {   /* explicit long */
+        long_suffix = unsigned_suffix = 0;
+        while (cc == 'L' || cc == 'l' || cc == 'U' || cc == 'u') {
+            if (cc == 'L' || cc == 'l') long_suffix = 1;
+            else unsigned_suffix = 1;
             getch();
+        }
+        if (long_suffix) {   /* explicit long */
             goto retlong;
         }
 
@@ -594,8 +600,13 @@ fraction:
 #ifdef _LIL_END
     if (*(int64_t *)&n > __INT32_MAX__) return 0;
     *np.lp = *((long*)&n);
-    if (cc=='l' || cc=='L') {       /* explicitly long */
+    long_suffix = unsigned_suffix = 0;
+    while (cc == 'L' || cc == 'l' || cc == 'U' || cc == 'u') {
+        if (cc == 'L' || cc == 'l') long_suffix = 1;
+        else unsigned_suffix = 1;
         getch();
+    }
+    if (long_suffix) {       /* explicitly long */
 longint:
 # ifdef DEBUG
         fprintf(stderr,"number: n=%08lX\n",*((long*)&n));
@@ -608,8 +619,13 @@ longint:
     }
 #else /* big endian */
     if (*((long*)&n)) return 0;     /*  overflow  */
-    if (cc=='l' || cc=='L') {   /* explicitly long */
+    long_suffix = unsigned_suffix = 0;
+    while (cc == 'L' || cc == 'l' || cc == 'U' || cc == 'u') {
+        if (cc == 'L' || cc == 'l') long_suffix = 1;
+        else unsigned_suffix = 1;
         getch();
+    }
+    if (long_suffix) {   /* explicitly long */
 longint:
 # ifdef DEBUG
 #  ifdef MWOS
