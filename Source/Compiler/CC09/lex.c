@@ -331,6 +331,7 @@ int lexinit(void)
      install("char",CHAR);
      install("short",SHORT);
      install("long",LONG);
+     install("void",INT);
      mosflg=1; /* These keywords may appear inside struct defs */
      install("int",INT);
      install("char",CHAR);
@@ -338,6 +339,9 @@ int lexinit(void)
      install("long",LONG);
      install("signed", SIGN);
      install("unsigned",UNSIGN);
+     install("void",INT);
+     install("const",QUAL);
+     install("volatile",QUAL);
 #ifdef DOFLOATS
      install("float",FLOAT);
 #endif
@@ -362,6 +366,8 @@ int lexinit(void)
      install("union",UNION);
      install("signed", SIGN);
      install("unsigned",UNSIGN);
+     install("const",QUAL);
+     install("volatile",QUAL);
 }
 
 

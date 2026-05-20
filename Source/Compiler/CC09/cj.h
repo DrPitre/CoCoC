@@ -300,8 +300,9 @@ typedef struct initstruct {
 
 #define SIGN        47  /* mostly ignored */
 #define SHORT       48  /* short type modifier */
+#define QUAL        49  /* const/volatile qualifier, currently ignored */
 
-/* 49..63 reserved to avoid conflicting with functions returning types */
+/* 50..63 reserved to avoid conflicting with functions returning types */
 
 #define SEMICOL     64  /* ; expression terminator */
 #define LBRACE      65  /* { block start */

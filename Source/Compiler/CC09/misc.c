@@ -190,6 +190,7 @@ int istype(void)
             case SIGN:
             case SHORT:
             case LONG:
+            case QUAL:
             case STRUCT:
             case UNION:
 #ifdef  DOFLOATS

@@ -25,6 +25,16 @@
 static direct int reguse;
 static direct struct initstruct *initlist,*initlast,*initfree;
 
+static void skip_proto_list(void)
+{
+    int level;
+
+    for (level = 1; level && sym != EOF; getsym()) {
+        if (sym == LPAREN) ++level;
+        else if (sym == RPAREN) --level;
+    }
+}
+
 #ifdef FUNCNAME
 direct int fnline;
 #endif
@@ -544,6 +554,11 @@ int declist(register symnode **list)
     *list = NULL;
     getsym();
 
+    if (istype()) {
+        skip_proto_list();
+        return;
+    }
+
     for (;;) {
         if (sym == RPAREN) break;
         if (sym == NAME) {
@@ -612,6 +627,8 @@ int modifier(int *size)
             if (is_long || isshort) goto err;
             isshort=1;
             break;
+        case QUAL:
+            break;
         /* final types (terminal) */
         case CHAR:
             if (is_long || isshort) goto err;
@@ -679,6 +696,7 @@ int settype(cval_t *size, dimnode **dimptr, elem **ellist)
     cval_t tsize = INTSIZE;
 
     *ellist = 0;
+    while (sym == KEYWORD && symval == QUAL) getsym();
     if (sym==KEYWORD) {
         switch (type=symval) {
             case LONG:
