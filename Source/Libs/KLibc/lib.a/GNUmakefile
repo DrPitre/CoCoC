@@ -6,9 +6,9 @@ OFILES3 = setbuf.o fseek.o putc.o ftelldummy.o getc.o flshdummy.o setbase.o \
 OFILES4 = system.o reverse.o strings.o strcmp.o strlen.o strncpy.o strncat.o \
           strncmp.o strhcpy.o strtok.o strpbrk.o strspn.o index.o patmatch.o
 OFILES5 = stringsu.o strucmp.o strnucmp.o case.o strclr.o memccpy.o memchr.o \
-          memcmp.o memcpy.o memset.o atol.o atoi.o iob_data.o chcodes.o
+          memcmp.o memcpy.o memset.o atol.o atoi.o strtol.o iob_data.o chcodes.o
 OFILES6 = sleep.o setjmp.o strass.o realloc.o calloc.o memory.o rand.o
-OFILES7 = gs1.o gs2.o ss.o os_gs_ss.o
+OFILES7 = gs1.o gs2.o ss.o os_gs_ss.o dirseek.o l3tol.o ltol3.o ltoc3tol.o
 
 OFILES = $(OFILES1) $(OFILES2) $(OFILES3) $(OFILES4) $(OFILES5) \
 	$(OFILES6) $(OFILES7)
@@ -29,6 +29,11 @@ printf.o: $(CMOC_OS9_LIB)/printf.c $(TOP)/cmoc-inline-asm-to-dcc.awk
 	$(O2U) < $< | awk -f $(TOP)/cmoc-inline-asm-to-dcc.awk > printf.dcc.c
 	CDEF=$(DCC_DEFS) $(DCC) -L $(DCCFLAGS) -r -f=$@ printf.dcc.c
 	$(RM) printf.dcc.c
+
+dirseek.o: dirseek.a $(RMA2LW)
+	$(O2U) < $< | $(SED) -f $(RMA2LW) > dirseek.s
+	$(LWASM) $(AFLAGS) --obj -o $@ dirseek.s
+	$(RM) dirseek.s
 
 main.lib: $(OFILES)
 	lwar -c $@ $^

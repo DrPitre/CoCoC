@@ -25,6 +25,11 @@ lseek.o: lseek.a $(RMA2LW) $(TOP)/dcc-long-alias-asm.awk
 	$(LWASM) $(AFLAGS) --obj -o $@ lseek.s
 	$(RM) lseek.s
 
+time.o: time.a $(RMA2LW)
+	$(O2U) < $< | $(SED) -f $(RMA2LW) > time.s
+	$(LWASM) $(AFLAGS) --obj -o $@ time.s
+	$(RM) time.s
+
 io.o: $(CMOC_OS9_LIB)/io.as $(CMOC_RMA2LW) $(DCCMOC) $(CMOC_ALIAS) $(CMOC_DEDUPE) $(TOP)/cmoc-strip-lseek-asm.awk
 	$(O2U) < $< | awk -f $(TOP)/cmoc-strip-lseek-asm.awk | $(SED) -f $(CMOC_RMA2LW) | $(SED) -f $(DCCMOC) | awk -f $(CMOC_ALIAS) | awk -f $(CMOC_DEDUPE) > io.s
 	$(LWASM) $(AFLAGS) --obj -o $@ io.s

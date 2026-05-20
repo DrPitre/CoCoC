@@ -1,0 +1,39 @@
+ psect dirseek_a,0,0,1,0,0
+
+* seekdir(dirp, loc)
+* DIR   *dirp;
+* long  loc;
+*    {
+*    lseek(dirp->dd_fd, loc, 0);
+*    }
+
+seekdir:
+ clra
+ clrb
+ pshs D from front
+ ldd 8,S ls word
+ pshs D
+ ldd 8,S ms word
+ bra telldir1
+
+*
+* long
+* telldir(dirp)
+* DIR   *dirp;
+*    {
+*    return (lseek(dirp->dd_fd, 0L, 1));
+*    }
+
+telldir:
+ ldd #1
+ pshs D from here
+ clrb
+ pshs D zero offset
+telldir1 pshs D
+ ldd [8,S] fp
+ pshs D
+ lbsr lseek
+ leas 8,s
+ rts X points to ret val
+
+ endsect

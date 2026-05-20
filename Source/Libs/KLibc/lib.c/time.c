@@ -1,8 +1,18 @@
 #include <time.h>
 
+struct sgtbuf {
+	unsigned char t_year;
+	unsigned char t_month;
+	unsigned char t_day;
+	unsigned char t_hour;
+	unsigned char t_minute;
+	unsigned char t_second;
+};
+
 extern unsigned _mdays[];
 extern int _isleap();
 extern unsigned _leaps();
+extern time_t cvtime();
 
 time_t
 time (arg)

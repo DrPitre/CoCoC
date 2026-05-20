@@ -10,6 +10,9 @@ CFLAGS += -I../defs
 cstuff.lib: $(OFILES)
 	lwar -c $@ $^
 
+time.o: time.c
+	CDEF=$(DCC_DEFS) $(DCC) -L $(DCCFLAGS) -r -f=$@ $<
+
 clean:
 	rm -f cstuff.lib dbg.lib *.o *.s *.cp *.list *.map c.errors
 
