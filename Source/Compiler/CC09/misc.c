@@ -12,8 +12,7 @@
 
 /* to push down an outer block declaration
  */
-pushdown(sptr)
-register symnode *sptr;
+int pushdown(register symnode *sptr)
 {
     register symnode *nptr;
 
@@ -29,8 +28,7 @@ register symnode *sptr;
 
 /* to recover outer block declaration
  */
-pullup(sptr)
-register symnode *sptr;
+int pullup(register symnode *sptr)
 {
     register symnode *nptr;
 
@@ -44,16 +42,13 @@ register symnode *sptr;
 
 /* byte move by count
  */
-move(p1,p2,count)
-register char *p1, *p2;
-int count;
+int move(register char *p1, register char *p2, int count)
 {
     while (count--) *p2++ = *p1++;
 }
 
 
-fatal(errstr)
-char *errstr;
+int fatal(char *errstr)
 {
     error(errstr);
     fflush(stderr); /* because 'tidy()' uses '_exit()' i.e. no flush */
@@ -61,29 +56,25 @@ char *errstr;
 }
 
 
-multidef()
+int multidef(void)
 {
     error("multiple definition");
 }
 
 
-error(s)
-char s[];
+int error(char s[])
 {
     doerr(symptr-line,s,symline);
 }
 
 
-warn(s)
-char s[];
+int warn(char s[])
 {
     dowarn(symptr-line,s,symline);
 }
 
 
-comperr(node,errstr)
-register expnode *node;
-char *errstr;
+int comperr(register expnode *node, char *errstr)
 {
     char newstr[50];
 
@@ -93,17 +84,13 @@ char *errstr;
 }
 
 
-terror(node,errstr)
-register expnode *node;
-char *errstr;
+int terror(register expnode *node, char *errstr)
 {
     doerr(node->pnt - line,errstr,node->lno);
 }
 
 
-dowarn(n,wstr,lno)
-register int n;
-char wstr[];
+int dowarn(register int n, char wstr[], int lno)
 {
     eprintf("%s:%d: *** warning: %s ***\n", filename, lno, wstr);
     if (lno == lineno) {
@@ -118,9 +105,7 @@ dopoint:
 }
 
 
-doerr(n,errstr,lno)
-register int n;
-char errstr[];
+int doerr(register int n, char errstr[], int lno)
 {
     eprintf("%s:%d: *** %s ***\n", filename, lno, errstr);
     if (lno == lineno) {
@@ -140,30 +125,30 @@ dopoint:
 }
 
 
-eprintf(msg,s1,s2,s3,s4)
-char *msg;
+void eprintf(char *msg, ...)
 {
-    fprintf(stderr,msg,s1,s2,s3,s4);
+    va_list ap;
+
+    va_start(ap,msg);
+    vfprintf(stderr,msg,ap);
+    va_end(ap);
 }
 
 
-eputs(s)
-char *s;
+void eputs(char *s)
 {
     fputs(s,stderr);
     eputchar('\n');
 }
 
 
-eputchar(c)
-char c;
+void eputchar(int c)
 {
     putc(c,stderr);
 }
 
 
-reltree(tree)
-register expnode *tree;
+int reltree(register expnode *tree)
 {
     if (tree) {
 #ifdef DEBUG
@@ -180,8 +165,7 @@ register expnode *tree;
 }
 
 
-release(node)
-register expnode *node;
+int release(register expnode *node)
 {
     if(node) {
         node->left=freenode;
@@ -190,14 +174,13 @@ register expnode *node;
 }
 
 
-nodecopy(n1,n2)
-char *n1,*n2;
+int nodecopy(char *n1, char *n2)
 {
     move(n1,n2,NODESIZE);
 }
 
 
-istype()
+int istype(void)
 {
     if (sym == KEYWORD)
         switch (symval) {
@@ -222,7 +205,7 @@ istype()
 }
 
 
-issclass()
+int issclass(void)
 {
     if(sym==KEYWORD) switch(symval) {
         case EXTERN:
@@ -237,34 +220,31 @@ issclass()
 }
 
 
-decref(t)
+int decref(int t)
 {
     return ((t >> 2) & (~BASICT)) + btype(t) ;
 }
 
 
-incref(t)
+int incref(int t)
 {
     return ((t & (~BASICT)) << 2 ) + POINTER + btype(t) ;
 }
 
 
-isbin(op)
-register int op;
+int isbin(register int op)
 {
     return (op>=UMOD && op<=UGT);
 }
 
 
-dimnode *
-dimwalk(dptr)
-register dimnode *dptr;
+dimnode * dimwalk(register dimnode *dptr)
 {
     return dptr ? dptr->dptr : 0;
 }
 
 
-need(key)
+int need(int key)
 {
     static char ptr[] = "x expected";
     register int i;
@@ -294,14 +274,14 @@ need(key)
 }
 
 
-junk()
+int junk(void)
 {
     while (sym != SEMICOL && sym != RBRACE && sym != EOF) getsym();
 }
 
 
 #ifdef PTREE
-getkeys()
+int getkeys(void)
 {
     char kname[20];
     register char *p;
@@ -325,9 +305,7 @@ getkeys()
     fclose(in1);
 }
 
-prtree(node,title)
-expnode *node;
-char *title;
+int prtree(expnode *node, char *title)
 {
     if (dflag) {
         fflush(stdout);
@@ -337,8 +315,7 @@ char *title;
 }
 
 
-ptree(node)
-register expnode *node;
+int ptree(register expnode *node)
 {
     if (node) {
         pnode(node);
@@ -348,8 +325,7 @@ register expnode *node;
 }
 
 
-pnode(node)
-register expnode *node;
+int pnode(register expnode *node)
 {
     int op,val,i;
 

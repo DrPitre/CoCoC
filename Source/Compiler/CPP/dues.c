@@ -73,7 +73,7 @@ doinclude()
 					putesc(NEWFNAME, filename, modname);
 					inclptr = nptr;
 
-					putesc(NEWLINO, 0);
+					putesc(NEWLINO, LINEARG(0));
 					setline(lineno = 0);
 					in = fp;
 					return;

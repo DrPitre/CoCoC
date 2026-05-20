@@ -23,12 +23,11 @@ direct int eflag;
 direct  int     *inclptr;       /* include stack pointer */
 #endif     // <<<- inserted to match preceeding "ifndef PASS2"
 
-main(argc,argv)
-char **argv;
+int main(int argc, char **argv)
 {
         register char *p;
 
-        int tidy();
+        int tidy(void);
 
 #ifdef __unix__
         signal(SIGINT,tidy);
@@ -57,6 +56,8 @@ char **argv;
 #endif
                             case 's':
                                 sflag = 1; break;
+                            case 'L':
+                                lwflag = 1; break;
 #ifdef  PTREE
                             case 'd':
                                 dflag = 1;
@@ -118,7 +119,7 @@ char **argv;
 }
 
 
-errexit()
+int errexit(void)
 {
 #ifdef  SPLIT
                 if(infile)

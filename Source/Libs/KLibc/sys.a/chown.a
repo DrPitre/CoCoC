@@ -26,7 +26,7 @@ chown:
 
  pshs a save path number
  ldd Bufsize+9,s get the new owner id
- std FD.Own,x modify the FD
+ std 1,x modify the FD owner
  puls a restore path number
  ldb #SS.FD write FD code
  os9 I$SetStt write the FD
@@ -44,7 +44,7 @@ chexit
 * Bufsize buffer is at 2,s
 *
 openfile
- lda #Write. access mode
+ lda #2 write access mode
  ldx Bufsize+8,s address of name
  os9 I$Open open the file
  bcc openf10 exit if error

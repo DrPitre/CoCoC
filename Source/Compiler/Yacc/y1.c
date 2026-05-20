@@ -155,7 +155,8 @@ int zzacent = 0;
 int zzexcp = 0;
 int zzclose = 0;
 int zzsrconf = 0;
-int * zzmemsz = mem0;
+struct item itemstore[MEMSIZE];
+struct item *zzitemsz = itemstore;
 int zzrrconf = 0;
 
 summary(){ /* output the summary on the tty */
@@ -166,7 +167,7 @@ summary(){ /* output the summary on the tty */
 		fprintf( foutput, "%d/%d grammar rules, %d/%d states\n", nprod, NPROD, nstate, NSTATES );
 		fprintf( foutput, "%d shift/reduce, %d reduce/reduce conflicts reported\n", zzsrconf, zzrrconf );
 		fprintf( foutput, "%d/%d working sets used\n", zzcwp-wsets,  WSETSIZE );
-		fprintf( foutput, "memory: states,etc. %d/%d, parser %d/%d\n", zzmemsz-mem0, MEMSIZE,
+		fprintf( foutput, "memory: states,etc. %d/%d, parser %d/%d\n", zzitemsz-itemstore, MEMSIZE,
 			    memp-amem, ACTSIZE );
 		fprintf( foutput, "%d/%d distinct lookahead sets\n", nlset, LSETSIZE );
 		fprintf( foutput, "%d extra closures\n", zzclose - 2*nstate );
@@ -187,15 +188,20 @@ summary(){ /* output the summary on the tty */
 	}
 
 /* VARARGS1 */
-error(s,a1) char *s; { /* write out error comment */
-	
-	++nerrors;
-	fprintf( stderr, "\n fatal error: ");
-	fprintf( stderr, s,a1);
-	fprintf( stderr, ", line %d\n", lineno );
-	if( !fatfl ) return;
-	summary();
-	exit(1);
+void
+error(char *s, ...)
+{ /* write out error comment */
+		va_list ap;
+		
+		++nerrors;
+		va_start(ap, s);
+		fprintf( stderr, "\n fatal error: ");
+		vfprintf( stderr, s, ap);
+		fprintf( stderr, ", line %d\n", lineno );
+		va_end(ap);
+		if( !fatfl ) return;
+		summary();
+		exit(1);
 	}
 
 aryfil( v, n, c ) int *v,n,c; { /* set elements 0 through n-1 to c */
@@ -381,9 +387,9 @@ putitem( ptr, lptr )  int *ptr;  struct looksets *lptr; {
 	j->pitem = ptr;
 	if( !nolook ) j->look = flset( lptr );
 	pstate[nstate+1] = ++j;
-	if( (int *)j > zzmemsz ){
-		zzmemsz = (int *)j;
-		if( zzmemsz >=  &mem0[MEMSIZE] ) error( "out of state space" );
+	if( j > zzitemsz ){
+		zzitemsz = j;
+		if( zzitemsz >=  &itemstore[MEMSIZE] ) error( "out of state space" );
 		}
 	}
 
@@ -468,7 +474,7 @@ stagen(){ /* generate the states */
 	/* someday, alloc should be used to allocate all this stuff... for now, we
 	/* accept that if pointers don't fit in integers, there is a problem... */
 
-	pstate[0] = pstate[1] = (struct item *)mem;
+	pstate[0] = pstate[1] = itemstore;
 	aryfil( clset.lset, tbitset, 0 );
 	putitem( prdptr[0]+1, &clset );
 	tystate[0] = MUSTDO;

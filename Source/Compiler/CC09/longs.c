@@ -14,16 +14,14 @@
 #define swap(x,y)      {expnode *t;t=x;x=y;y=t;}
 
 
-lload(ptr)
-expnode *ptr;
+int lload(expnode *ptr)
 {
     tranlexp(ptr);
     getadd(ptr);
 }
 
 
-tranlexp(node)
-register expnode *node;
+int tranlexp(register expnode *node)
 {
     register expnode *p;
     register int op,s;
@@ -49,7 +47,7 @@ register expnode *node;
                 case YIND:
                 case UIND:
                     if (node->val.num) {
-                        gen(LEAX,NODE,node);
+                        gen(LEAX,NODE,node,0);
                         node->op = XIND;
                         node->val.num = 0;
                     }
@@ -57,19 +55,19 @@ register expnode *node;
             break;
         case UTOL:
             lddexp(node->left);
-            gen(LONGOP,UTOL);
+            gen(LONGOP,UTOL,0,0);
             node->op=FREG;
             break;
 #ifdef  DOFLOATS
         case DTOL:
             dload(node->left);
-            gen(DBLOP,DTOL,node->left);
+            gen(DBLOP,DTOL,node->left,0);
             node->op=FREG;
             break;
 #endif
         case ITOL:
             lddexp(node->left);
-            gen(LONGOP,ITOL);
+            gen(LONGOP,ITOL,0,0);
             node->op=FREG;
             break;
         case LCONST:
@@ -77,7 +75,7 @@ register expnode *node;
             fprintf(stderr,"tranlexp: *(node->val.lp=%04X)=%08lX\n",
                     node->val.lp,*node->val.lp);
 #endif
-            gen(LONGOP,LCONST,node->val.lp);
+            gen(LONGOP,LCONST,node->val.lp,0);
             /*  should free constant storage here  */
             node->val.lp = NULL;
             node->op = XIND;
@@ -93,18 +91,18 @@ register expnode *node;
         case COMPL:
         case NEG:
             lload(node->left);
-            gen(LONGOP,op);
+            gen(LONGOP,op,0,0);
             node->op = XIND;
             node->val.num = 0;
             break;
         case INCAFT:
         case DECAFT:
             gen(LOADIM,XREG,FREG,0);
-            gen(PUSH,XREG);
+            gen(PUSH,XREG,0,0);
             lload(node->left);
-            gen(LONGOP,op);
-            gen(LONGOP,MOVE);
-            gen(LONGOP,op==INCAFT ? DECAFT : INCAFT);
+            gen(LONGOP,op,0,0);
+            gen(LONGOP,MOVE,0,0);
+            gen(LONGOP,op==INCAFT ? DECAFT : INCAFT,0,0);
             node->op=FREG;
             break;
         case CALL:
@@ -151,10 +149,10 @@ register expnode *node;
             if(p->op==LCONST) pushcon(p);
             else {
                 lload(p);
-                gen(LONGOP,STACK);
+                gen(LONGOP,STACK,0,0);
             }
             lload(node->right);
-            gen(LONGOP,op);
+            gen(LONGOP,op,0,0);
             node->op=FREG;
             break;
 
@@ -163,17 +161,17 @@ shifts:
         case SHR:
         case USHR:
             lload(node->left);
-            gen(PUSH,XREG);
+            gen(PUSH,XREG,0,0);
             lddexp(node->right);
-            gen(LONGOP,op);
+            gen(LONGOP,op,0,0);
             node->op=FREG;
             break;
 
         case ASSIGN:
             lload(node->left);
-            gen(PUSH,XREG);
+            gen(PUSH,XREG,0,0);
             lload(node->right);
-            gen(LONGOP,MOVE);
+            gen(LONGOP,MOVE,0,0);
             node->op = XIND;
             node->val.num = 0;
             break;
@@ -188,11 +186,11 @@ shifts:
         default:
             if (op >= ASSPLUS) {
                 lload(p=node->left);
-                gen(PUSH,XREG);
+                gen(PUSH,XREG,0,0);
                 node->op=op-(ASSPLUS-PLUS);
                 p->op=XIND;
                 tranlexp(node);
-                gen(LONGOP,MOVE);
+                gen(LONGOP,MOVE,0,0);
                 node->op = XIND;
                 node->val.num = 0;
                 break;
@@ -206,8 +204,7 @@ shifts:
 }
 
 
-getadd(ptr)
-register expnode *ptr;
+int getadd(register expnode *ptr)
 {
     switch(ptr->op) {
         case NAME:
@@ -218,7 +215,7 @@ register expnode *ptr;
             break;
         case YIND:
         case UIND:
-            gen(LEAX,NODE,ptr);
+            gen(LEAX,NODE,ptr,0);
 #ifdef REGCONTS
             setxreg(ptr);
 #endif
@@ -227,20 +224,19 @@ register expnode *ptr;
 }
 
 
-pushcon(p)
-register expnode *p;
+int pushcon(register expnode *p)
 {
     register long *p1;
 
     if ((p1 = p->val.lp) && *p1) {
         gen(LOAD,DREG,CONST,(int) *p1);
-        gen(PUSH,DREG);
+        gen(PUSH,DREG,0,0);
         gen(LOAD,DREG,CONST,(int) (*p1 >> 16));
-        gen(PUSH,DREG);
+        gen(PUSH,DREG,0,0);
     } else {
         gen(LOAD,DREG,CONST,0);
-        gen(PUSH,DREG);
-        gen(PUSH,DREG);
+        gen(PUSH,DREG,0,0);
+        gen(PUSH,DREG,0,0);
     }
     if (p1) {
         /*  should free constant storage here  */

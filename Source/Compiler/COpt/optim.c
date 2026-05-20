@@ -1,11 +1,14 @@
 #include "op.h"
 #include "actions.h"
+#include <stdint.h>
 
 direct int opsdone;
 int labelnum = 0;
 action *acslots[128];
 
 static char empty[1] = {'\0'};	/* the empty string */
+#define REF1 ((char *)(intptr_t)1)
+#define REF2 ((char *)(intptr_t)2)
 
 extern direct chain *freeins;
 extern char *bratab[];
@@ -19,7 +22,7 @@ char *
 strinst (val)
 char *val;
 {
-	switch ((int) val) {
+	switch ((intptr_t) val) {
 		case 0:		return zero;
 		case 1:		return p1;
 		case 2:		return p2;
@@ -71,10 +74,10 @@ char *line;
 				i->mnp = NULL;
 				break;
 			case '1':
-				i->mnp = (char *)1;
+				i->mnp = REF1;
 				break;
 			case '2':
-				i->mnp = (char *)2;
+				i->mnp = REF2;
 				break;
 			default:
 				error ("bad opcode reference");
@@ -106,10 +109,10 @@ char *line;
 				i->opp = NULL;
 				break;
 			case '1':
-				i->opp = (char *)1;
+				i->opp = REF1;
 				break;
 			case '2':
-				i->opp = (char *)2;
+				i->opp = REF2;
 				break;
 			default:
 				error ("bad operand reference");
@@ -270,7 +273,7 @@ restart:
                 }
                 if (ap->mnp && match(i->mnem,ap->mnp) == 0) break;
                 if (ap->opp) {
-                    if ((int)ap->opp == 1) {
+                    if (ap->opp == REF1) {
                         if (i->pred == &ilist) break;
                         if (match(i->args,i->pred->args) == 0) break;
                     } else if (match(i->args,ap->opp) == 0) break;
@@ -303,8 +306,8 @@ restart:
 		for (ap = a->repp, mp = a->actp; ap; ap = ap->nxtins,mp = mp->nxtins) {
 			char *ts;
 			if (ap->mnp) {
-				if ((int)ap->mnp == 1) /* do nothing, same as NULL */;
-				else if ((int)ap->mnp == 2) strcpy(i->mnem,i->pred->mnem);
+				if (ap->mnp == REF1) /* do nothing, same as NULL */;
+				else if (ap->mnp == REF2) strcpy(i->mnem,i->pred->mnem);
 				else if (ts = index(ap->mnp, '\\')) {	// mnp has \#
 					if (*(ts+1) > '0' && *(ts+1) < '3')
 						matchcpy (ap->mnp,
@@ -317,8 +320,8 @@ restart:
 				}
             }
             if (ap->opp) {
-				if ((int)ap->opp == 1) /* do nothing, same as NULL */;
-				else if ((int)ap->opp == 2) strcpy(i->args,i->pred->args);
+				if (ap->opp == REF1) /* do nothing, same as NULL */;
+				else if (ap->opp == REF2) strcpy(i->args,i->pred->args);
 				else if (ts = index(ap->opp, '\\')) {	// opp has \#
 					if (*(ts+1) > '0' && *(ts+1) < '3')
 						matchcpy (ap->opp,

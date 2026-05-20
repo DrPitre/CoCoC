@@ -23,6 +23,8 @@
 #define OPTIMIZER	"dco68"
 #define ASSEMBLER	"rma"
 #define LINKER		"rlink"
+#define LWASSEMBLER	"lwasm"
+#define LWLINKER	"lwlink"
 
 direct int	aflag = FALSE,
 			bflag = FALSE,
@@ -34,7 +36,7 @@ direct int	aflag = FALSE,
 			lv2flag = FALSE,
 			lsflg = FALSE,
 			mflag = FALSE,
-			oflag = TRUE,
+			oflag = FALSE,
 			o2flg = FALSE,
 			pflag = FALSE,
 			p2flg = FALSE,
@@ -52,6 +54,7 @@ direct int	aflag = FALSE,
 			filcnt = 0,
 			hello = FALSE,
 			libcnt = 0,
+			lwflag = TRUE,
 			maccnt = 0,
 			newopath = 0,
 			nullflag = FALSE,
@@ -64,11 +67,19 @@ direct char	*thisfilp = 0,
 direct int	frkprmsiz = 0;
 direct char	*frkprmp = 0;
 
-direct char	*tmproot[] = { "/R", "/R0", "/DD/TMP"};
+#ifndef DCC_LIBDIR
+# define DCC_LIBDIR "/lib/"
+#endif
+
+#ifndef DCC_DEFDRIVE
+# define DCC_DEFDRIVE "/dd"
+#endif
+
+	direct char	*tmproot[] = { "/R", "/R0", "/DD/TMP"};
 
 direct char	*tmptail = "ctmp.XXXXXX";
-direct char	*libdir = "/lib/";
-direct char	*defdrive = "/dd";
+	direct char	*libdir = DCC_LIBDIR;
+	direct char	*defdrive = DCC_DEFDRIVE;
 
 char		tmpname[64] = "";
 char		rlib[60] = "";

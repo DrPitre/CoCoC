@@ -6,8 +6,7 @@ typedef struct {
 } expnode;
 
 
-tranrel(op)
-short op;
+int tranrel(short op)
 {
     expnode *lhs,*rhs;
 

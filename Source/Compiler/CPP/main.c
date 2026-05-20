@@ -218,7 +218,7 @@ done: ;
 	while (getline1() != EOF) {
 		if (nxtlno != lineno - 1) {     /*   if line number changed */
 			nxtlno = lineno - 1;        /*   tell the compiler */
-			putesc(NEWLINO, nxtlno);
+			putesc(NEWLINO, LINEARG(nxtlno));
 		}
 		fprintf(out, "%s\n", line);     /*   write out expanded line */
 		if (ferror(stdout)) {

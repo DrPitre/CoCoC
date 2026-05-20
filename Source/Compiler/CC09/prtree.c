@@ -4,7 +4,7 @@
 char *kw[200];
 
 
-getkeys()
+int getkeys(void)
 {
     char kname[20];
     register char *p;
@@ -28,8 +28,7 @@ getkeys()
 }
 
 
-prtree(node,title)
-expnode *node;
+int prtree(expnode *node, char *title)
 {
     if (dflag) {
         fflush(stdout);
@@ -40,8 +39,7 @@ expnode *node;
 }
 
 
-ptree(node)
-register expnode *node;
+int ptree(register expnode *node)
 {
     if (node) {
         pnode(node);
@@ -51,8 +49,7 @@ register expnode *node;
 }
 
 
-pnode(node)
-register expnode *node;
+int pnode(register expnode *node)
 {
     int op,val,i;
 

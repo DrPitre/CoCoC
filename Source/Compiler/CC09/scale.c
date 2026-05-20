@@ -25,9 +25,7 @@ static int atoftbl[] = {
 static double *dtbl = atoftbl;
 
 
-static double
-exp5 (power)
-register int power;
+static double exp5(register int power)
 {
 	if (power > 9)
 		return dtbl[(power%10)] * dtbl[((power/10))+9];
@@ -37,10 +35,7 @@ register int power;
 #endif
 
 
-static double
-scale0 (d, cnt, pos)
-double	d;
-register int	cnt, pos;
+static double scale0(double d, register int cnt, register int pos)
 {
 #ifdef _OS9
 	return (pos ? (d * exp5 (cnt)) : (d / exp5 (cnt)));
@@ -50,10 +45,7 @@ register int	cnt, pos;
 }
 
 
-double
-scale(d, cnt, sign)
-double	d;
-int		cnt, sign;
+double scale(double d, int cnt, int sign)
 {
 #ifdef _OS9
 	register unsigned char *dx = &d;

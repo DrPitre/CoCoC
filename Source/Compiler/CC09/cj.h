@@ -1,6 +1,9 @@
 #include <stdint.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+typedef intptr_t cval_t;
 
 /*	Canonicalize our system definitions: __unix__, _OS9, _OSK, _OS9000
  */
@@ -53,7 +56,11 @@
  */
 #ifdef __unix__
 # include <unistd.h>
-# include <endian.h>
+# ifdef __APPLE__
+#  include <machine/endian.h>
+# else
+#  include <endian.h>
+# endif
 # if BYTE_ORDER == BIG_ENDIAN
 #  define _BIG_END 1
 # elif BYTE_ORDER == LITTLE_ENDIAN
@@ -143,7 +150,7 @@ typedef struct dimstr {
 
 typedef struct downsym {
     short type;             /* type of entry */
-    int size;               /* size of entry */
+    cval_t size;            /* size of entry or pointer-sized payload */
     dimnode *dimptr;        /* ptr to list of dimensions */
     int offset;             /* general purpose */
     int storage;            /* storage class */
@@ -160,7 +167,7 @@ typedef struct downsym {
 
 typedef struct symstr {
     short type;             /* type of entry */
-    int size;               /* size of entry */
+    cval_t size;            /* size of entry or pointer-sized payload */
     dimnode *dimptr;        /* ptr to list of dimensions */
     int offset;             /* general purpose */
     int storage;            /* storage class */
@@ -179,11 +186,11 @@ typedef struct symstr {
 
 typedef struct expstr {
     short type;             /* type of node */
-    int size;               /* size of basic type */
+    cval_t size;            /* size of basic type or pointer-sized payload */
     dimnode *dimptr;        /* ptr to list of dimensions */
     short op;               /* operator */
     union {
-        int num;            /* numeric value */
+        cval_t num;         /* numeric value or pointer-sized payload */
         symnode *sp;        /* symbol pointer */
         long *lp;           /* long constant ptr */
 #ifdef DOFLOATS
@@ -503,6 +510,7 @@ global direct int   lineno,     /* current line number */
                     sp,         /* current stack pointer offset */
                     stlev,      /* stack reservation level */
                     callflag,   /* function call flag */
+                    lwflag,     /* emit LWTOOLS-compatible assembly */
                     sflag,      /* suppress stack checking code */
 #ifdef PROF
                     pflag,      /* if set generate profile calls */
@@ -515,10 +523,11 @@ global direct int   lineno,     /* current line number */
                     swflag,     /* current switch level */
                     mosflg,     /* member of structure flag */
                     sym,        /* current lexical token */
-                    symval,     /* and its associated value */
                     scount,     /* chars on current line of string */
                     symline,    /* lineno of current symbol */
                     maxpush;    /* maximum push level */
+
+global direct cval_t symval;    /* current lexical token's associated value */
 
 global char filename[FNAMESIZE];    /* current filename buffer */
 
@@ -577,10 +586,39 @@ typedef struct {
 
 
 /*  function type definitions  */
-char *grab();
+char *grab(int);
 
-extern  expnode *parsexp(), *primary(), *explist(), *getcast(),
-                *newnode(), *optim(), *fold(), *chtype(), *fixup(),
-                *tranexp(), *tranbool(), *treecopy();
+extern expnode *parsexp(int), *primary(void), *explist(void), *getcast(void);
+extern expnode *newnode(int, expnode *, expnode *, cval_t, int, char *);
+extern expnode *optim(expnode *), *fold(expnode *), *chtype(expnode *);
+extern expnode *fixup(int, int, expnode *, expnode *);
+extern expnode *tranexp(expnode *), *tranbool(expnode *, labstruc *, labstruc *, int);
+extern expnode *treecopy(expnode *);
 
-extern  dimnode *dimwalk();
+extern dimnode *dimwalk(dimnode *);
+
+extern void label(int), olbl(int), ot(char *), ol(char *), ob(int),
+            os(char *), od(cval_t), on(char *), nl(void), nlabel(char *, int);
+extern void deref(int, cval_t, int);
+extern int modstk(int);
+extern void defglob(symnode *, int, int), extstat(symnode *, int, int),
+            defvar(symnode *, int, int), locstat(int, int, int);
+#ifdef PROF
+extern void profname(char *, int);
+#endif
+#ifdef REGPARMS
+# ifdef PROF
+extern void startfunc(char *, int, int, int);
+# else
+extern void startfunc(char *, int, int);
+# endif
+#else
+# ifdef PROF
+extern void startfunc(char *, int, int);
+# else
+extern void startfunc(char *, int);
+# endif
+#endif
+extern void endfunc(void), defbyte(void), defword(void), comment(void),
+            vsect(int), endsect(void);
+extern void eprintf(char *, ...), eputs(char *), eputchar(int);

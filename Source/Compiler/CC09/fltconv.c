@@ -49,9 +49,7 @@
 #define IEEE_EXPN_MASK	(0xFFFLL << IEEE_MANT_BITS)
 #define IEEE_EXPN_BIAS	1022
 
-double
-dadjust (n)
-double	n;
+double dadjust(double n)
 {
 	union {
 		double		d;

@@ -30,12 +30,13 @@ direct int fnline;
 #endif
 
 
-extdef()
+int extdef(void)
 {
     register symnode *ptr;
     symnode *ptemp;
     dimnode *dimptr, *tdp;
-    int size,ssize,tsc,sclass,type,temp;
+    int ssize,tsc,sclass,type,temp;
+    cval_t size;
     elem *eptr;
 
     while (sym == RBRACE) {
@@ -140,12 +141,13 @@ next:
 }
 
 
-argdef()
+int argdef(void)
 {
     register symnode *ptr;
     symnode *ptemp;
     dimnode *dimptr, *tdp;
-    int sclass,type,size,stemp,temp;
+    int sclass,type,stemp,temp;
+    cval_t size;
     elem *eptr;
 
     switch (sclass = setclass()) {
@@ -199,13 +201,14 @@ next:
 }
 
 
-blkdef()
+int blkdef(void)
 {
     register symnode *ptr;
     symnode *ptemp;
     dimnode *dimptr, *tdp;
     expnode *ep;
-    int sclass,type,temp,size,stemp,ssize;
+    int sclass,type,temp,stemp,ssize;
+    cval_t size;
     elem *eptr;
     initnode *i;
 
@@ -296,10 +299,7 @@ next:
 }
 
 
-check_same(ptr,type,eptr)
-register symnode *ptr;
-register int type;
-register elem *eptr;
+int check_same(register symnode *ptr, register int type, register elem *eptr)
 {
      if (ptr->type != type
                 || (type == STRUCT && ptr->x.elems != eptr)) {
@@ -310,7 +310,7 @@ register elem *eptr;
 }
 
 
-chkreg(sclass,type)
+int chkreg(int sclass, int type)
 {
     /* if the user wants a register variable
      * and it is allowed allocate one.
@@ -343,8 +343,7 @@ chkreg(sclass,type)
 }
 
 
-newfunc(fptr,sclass)
-symnode *fptr;
+int newfunc(symnode *fptr, int sclass)
 {
     register symnode *p1;
     symnode *p2;
@@ -461,7 +460,7 @@ symnode *fptr;
 #ifdef USE_YREG
             case YREG:
 #endif
-                gen(stemp,offset-sp);
+                gen(stemp,offset-sp,0,0);
                 break;
             case ARG:
                 p1->storage = AUTO;
@@ -479,7 +478,7 @@ symnode *fptr;
 
     clear(&p2);
     clear(&labelist);
-    if (lastst != RETURN) gen(RETURN,0,0);
+    if (lastst != RETURN) gen(RETURN,0,0,0);
     lastst = 0;
 
     /* generate stack reservation */
@@ -491,8 +490,7 @@ symnode *fptr;
 }
 
 
-block(stkadj)
-int stkadj;
+int block(int stkadj)
 {
     register expnode *p;
     struct initstruct *i;
@@ -539,8 +537,7 @@ int stkadj;
 }
 
 
-declist(list)
-register symnode **list;
+int declist(register symnode **list)
 {
     register symnode *ptr,*last;
 
@@ -571,7 +568,7 @@ register symnode **list;
 }
 
 
-setclass()
+int setclass(void)
 {
      int class;
      if(issclass()) {
@@ -589,9 +586,7 @@ setclass()
      return 0;
 }
 
-int
-modifier (size)
-int *size;
+int modifier(int *size)
 {
     int is_long=0, isshort=0, issign=0, isunsign=0;
     int type = UNDECL, tsize = 0;
@@ -673,16 +668,15 @@ err:
     return 0;
 }
 
-settype(size,dimptr,ellist)
-int *size;
-dimnode **dimptr;
-elem **ellist;
+int settype(cval_t *size, dimnode **dimptr, elem **ellist)
 {
     register symnode *ptr, *tagptr;
     dimnode *dptr;
-    int offset,msize,mtype,savflg,dtype,s;
+    int offset,mtype,savflg,dtype,s;
+    cval_t msize;
     elem *eptr,*elast,*elocal;
-    int type = UNDECL, tsize = INTSIZE;
+    int type = UNDECL;
+    cval_t tsize = INTSIZE;
 
     *ellist = 0;
     if (sym==KEYWORD) {
@@ -732,7 +726,7 @@ default:
                             *ellist=tagptr->x.elems;
                             return STRUCT;
                         }
-                        *size = (int) tagptr;
+                        *size = (cval_t) tagptr;
                         return USTRUCT;
                     } else if(tagptr->type==STRUCT) multidef();
                 }
@@ -820,9 +814,7 @@ next:
 }
 
 
-declarator(ptr,dptr,bastype)
-symnode **ptr;
-dimnode **dptr;
+int declarator(symnode **ptr, dimnode **dptr, int bastype)
 {
     register dimnode *tempdim, *p, *p1;
     int dtype, savmos, count;
@@ -885,7 +877,7 @@ dimnode **dptr;
 }
 
 
-shiftin (a,b)
+int shiftin(int a, int b)
 {
     int temp;
 
@@ -898,9 +890,7 @@ shiftin (a,b)
 }
 
 
-sizeup(ptr,dimptr,size)
-register symnode *ptr;
-register dimnode *dimptr;
+int sizeup(register symnode *ptr, register dimnode *dimptr, cval_t size)
 {
     register int n,temp;
 
@@ -925,8 +915,7 @@ register dimnode *dimptr;
 }
 
 
-getsize(t,size,dptr)
-register dimnode *dptr;
+int getsize(int t, cval_t size, register dimnode *dptr)
 {
     int n;
 
@@ -945,8 +934,7 @@ register dimnode *dptr;
 }
 
 
-clear(list)
-symnode **list;
+int clear(symnode **list)
 {
     register symnode *this, *next, *p, **pp;
     char err[60];
@@ -996,14 +984,13 @@ symnode **list;
 }
 
 
-sizerr()
+int sizerr(void)
 {
     error("cannot evaluate size");
 }
 
 
-identerr()
+int identerr(void)
 {
     error("identifier missing");
 }
-

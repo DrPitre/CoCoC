@@ -81,7 +81,7 @@ char	*arg, *arg1;
 			fprintf(out, "%c%c\n%s\n%s\n", ESCHAR, type, arg, arg1);
 			break;
 		case NEWLINO:
-			fprintf(out,"%c%c\n%d\n",ESCHAR, type, (int)arg);
+			fprintf(out,"%c%c\n%d\n",ESCHAR, type, (int)(intptr_t)arg);
 			break;
 		default:
 			fprintf(out,"%c%c\n%s\n",ESCHAR, type, arg);

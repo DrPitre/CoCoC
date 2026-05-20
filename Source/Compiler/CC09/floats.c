@@ -8,16 +8,14 @@
 #ifdef  DOFLOATS
 
 
-dload(ptr)
-register expnode *ptr;
+int dload(register expnode *ptr)
 {
     trandexp(ptr);
     getadd(ptr);
 }
 
 
-trandexp(node)
-register expnode *node;
+int trandexp(register expnode *node)
 {
     register expnode *p;
     register int op, type;
@@ -36,22 +34,22 @@ register expnode *node;
         case UTOD:
         case ITOD:
             lddexp(node->left);
-            gen(DBLOP,op);
+            gen(DBLOP,op,0,0);
             node->op = FREG;
             break;
         case LTOD:
             lload(node->left);
-            gen(DBLOP,op);
+            gen(DBLOP,op,0,0);
             node->op = FREG;
             break;
         case DTOF:
         case FTOD:
             dload(node->left);
-            gen(DBLOP,op);
+            gen(DBLOP,op,0,0);
             node->op = FREG;
             break;
         case FCONST:
-            gen(DBLOP,FCONST,node->val.dp);
+            gen(DBLOP,FCONST,node->val.dp,0);
             node->op = XIND;
             /*  should free constant storage here  */
             node->val.dp = NULL;
@@ -65,18 +63,18 @@ register expnode *node;
         case DECBEF:
         case NEG:
             dload(node->left);
-            gen(DBLOP,op,type);
+            gen(DBLOP,op,type,0);
             node->op = XIND;
             node->val.num = 0;
             break;
         case INCAFT:
         case DECAFT:
-            gen(LOADIM,XREG,FREG);
-            gen(PUSH,XREG);
+            gen(LOADIM,XREG,FREG,0);
+            gen(PUSH,XREG,0,0);
             dload(node->left);
-            gen(DBLOP,op,type);
-            gen(DBLOP,MOVE,type);
-            gen(DBLOP,op == INCAFT ? DECAFT : INCAFT,type);
+            gen(DBLOP,op,type,0);
+            gen(DBLOP,MOVE,type,0);
+            gen(DBLOP,op == INCAFT ? DECAFT : INCAFT,type,0);
             node->op = FREG;
             break;
         case CALL:
@@ -94,16 +92,16 @@ register expnode *node;
         case TIMES:
         case DIV:
             dload(node->left);
-            gen(DBLOP,STACK);
+            gen(DBLOP,STACK,0,0);
             dload(node->right);
-            gen(DBLOP,op);
+            gen(DBLOP,op,0,0);
             node->op = FREG;
             break;
         case ASSIGN:
             dload(node->left);
-            gen(PUSH,XREG);
+            gen(PUSH,XREG,0,0);
             dload(node->right);
-            gen(DBLOP,MOVE,type);
+            gen(DBLOP,MOVE,type,0);
             node->op = XIND;
             node->val.num = 0;
             break;
@@ -112,17 +110,17 @@ register expnode *node;
                 p = node->left;
                 if (type == FLOAT) {
                     dload(p->left);
-                    gen(PUSH,XREG);
-                    gen(DBLOP,FTOD);
+                    gen(PUSH,XREG,0,0);
+                    gen(DBLOP,FTOD,0,0);
                 } else {
                     dload(p);
-                    gen(PUSH,XREG);
+                    gen(PUSH,XREG,0,0);
                 }
                 node->op = op - (ASSPLUS - PLUS);
                 p->op = XIND;
                 trandexp(node);
-                if (type == FLOAT) gen(DBLOP,DTOF);
-                gen(DBLOP,MOVE,type);
+                if (type == FLOAT) gen(DBLOP,DTOF,0,0);
+                gen(DBLOP,MOVE,type,0);
                 node->op = XIND;
                 node->val.num = 0;
                 break;

@@ -22,16 +22,20 @@ static direct unsigned stklab;       /* label for stack check equ value */
 
 
 
-epilogue()
+int epilogue(void)
 {
      dumpstrings();
      endsect();
-     if(errcount)
-          ol("fail source errors");
+     if(errcount) {
+          if (lwflag)
+               ol("ERROR source errors");
+          else
+               ol("fail source errors");
+     }
 }
 
 
-locstat(l,size,area)
+void locstat(int l, int size, int area)
 {
      vsect(area);
      olbl(l);
@@ -40,7 +44,7 @@ locstat(l,size,area)
 }
 
 
-defglob(ptr,size,area)
+void defglob(symnode *ptr, int size, int area)
 {
      vsect(area);
      defvar(ptr,size,GBLB);
@@ -48,7 +52,7 @@ defglob(ptr,size,area)
 }
 
 
-extstat(ptr,size,area)
+void extstat(symnode *ptr, int size, int area)
 {
      vsect(area);
      defvar(ptr,size,LCLB);
@@ -56,17 +60,14 @@ extstat(ptr,size,area)
 }
 
 
-defvar(ptr,size,scope)
-symnode *ptr;
-char scope;
+void defvar(symnode *ptr, int size, int scope)
 {
      fprintf(code,"%.8s%c rmb %d\n",ptr->sname,scope,size);
 }
 
 
 #ifdef PROF
-profname(name,lab)
-char *name;
+void profname(char *name, int lab)
 {
      olbl(lab);
      fprintf(code," fcc \"%.8s\"\n fcb 0\n",name);
@@ -76,20 +77,16 @@ char *name;
 
 #ifdef REGPARMS
 # ifdef PROF
-startfunc(name,flag,paramreg,lab)
+void startfunc(register char *name, int flag, int paramreg, int lab)
 # else
-startfunc(name,flag,paramreg)
+void startfunc(register char *name, int flag, int paramreg)
 # endif
 #else
 # ifdef PROF
-startfunc(name,flag,lab)
+void startfunc(register char *name, int flag, int lab)
 # else
-startfunc(name,flag)
+void startfunc(register char *name, int flag)
 # endif
-#endif
-register char *name;
-#ifdef REGPARMS
-int paramreg;
 #endif
 {
 #ifdef FUNCNAME
@@ -132,7 +129,7 @@ int paramreg;
 }
 
 
-endfunc()
+void endfunc(void)
 {
         /* generate stack reservation value */
      if(!sflag)
@@ -140,38 +137,44 @@ endfunc()
 }
 
 
-defbyte()
+void defbyte(void)
 {
         ot("fcb ");
 }
 
 
-defword()
+void defword(void)
 {
         ot("fdb ");
 }
 
 
-comment()
+void comment(void)
 {
         os("* ");
 }
 
 
-vsect(area)
+void vsect(int area)
 {
-     ol(area ? "vsect dp" : "vsect");
+     if (lwflag)
+          ol("SECTION data");
+     else
+          ol(area ? "vsect dp" : "vsect");
 }
 
 
-endsect()
+void endsect(void)
 {
-     ol("endsect");
+     if (lwflag)
+          ol("ENDSECT\n SECTION code");
+     else
+          ol("endsect");
 }
 
 
 /*
-dumpstrings()
+int dumpstrings(void)
 {
      register int c;
 
@@ -186,7 +189,7 @@ dumpstrings()
      }
 }
 */
-dumpstrings()
+int dumpstrings(void)
 {
      register int c;
 
@@ -201,7 +204,7 @@ dumpstrings()
 }
 
 
-tidy()
+int tidy(void)
 {
      int err = errno ? errno : 1;
 
@@ -211,4 +214,3 @@ tidy()
      }
      _exit(err);
 }
-

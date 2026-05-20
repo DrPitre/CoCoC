@@ -9,6 +9,7 @@
 
 %{
 # include "ldefs.c"
+# define YYSTYPE lexval_t
 %}
 %%
 %{
@@ -237,10 +238,9 @@ yylex(){
 						sectbegin = TRUE;
 						i = treesize*(sizeof(*name)+sizeof(*left)+
 							sizeof(*right)+sizeof(*nullstr)+sizeof(*parent))+ALITTLEEXTRA;
-						c = myalloc(i,1);
-						if(c == 0)
+						p = myalloc(i,1);
+						if(p == 0)
 							error("Too little core for parse tree");
-						p = c;
 						cfree(p,i,1);
 						name = myalloc(treesize,sizeof(*name));
 						left = myalloc(treesize,sizeof(*left));

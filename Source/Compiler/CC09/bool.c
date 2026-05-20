@@ -16,10 +16,7 @@ extern direct expnode *dregcont,*xregcont;
 #endif
 
 
-expnode *
-tranbool(node,tlab,flab,nj)
-register expnode *node;
-labstruc *tlab,*flab;
+expnode *tranbool(register expnode *node, labstruc *tlab, labstruc *flab, int nj)
 {
     int op;
     labstruc second;
@@ -57,8 +54,8 @@ l1:         uselabel(&second);
         case FCONST:
 #endif
         case LCONST:
-            if (node->val.num && nj == FALSE) gen(JMP,setlabel(tlab),0);
-            else if (nj && node->val.num == 0) gen(JMP,setlabel(flab),0);
+            if (node->val.num && nj == FALSE) gen(JMP,setlabel(tlab),0,0);
+            else if (nj && node->val.num == 0) gen(JMP,setlabel(flab),0,0);
             break;
         case COMMA:
             tranexp(node->left);
@@ -67,24 +64,22 @@ l1:         uselabel(&second);
         default:
             if(islong(node)) {
                 lload(node);
-                gen(LONGOP,TEST);
+                gen(LONGOP,TEST,0,0);
             }
 #ifdef  DOFLOATS
             else if(isfloat(node)) {
                 if(node->op==FTOD) node=node->left;
                 dload(node);
-                gen(DBLOP,TEST,node->type);
+                gen(DBLOP,TEST,node->type,0);
             }
 #endif
             else checkop(node);
-usual:      gen(CNDJMP,(nj ? EQ:NEQ),setlabel(nj ? flab : tlab));
+usual:      gen(CNDJMP,(nj ? EQ:NEQ),setlabel(nj ? flab : tlab),0);
      }
 }
 
 
-tranrel(op,node,tlab,flab,nj)
-expnode *node;
-labstruc *tlab,*flab;
+int tranrel(int op, expnode *node, labstruc *tlab, labstruc *flab, int nj)
 {
     labstruc *destin;
     register expnode *rhs,*lhs,*t;
@@ -132,7 +127,7 @@ labstruc *tlab,*flab;
             case UREG:
             case DREG:
 ok:
-                gen(PUSH,rhs->op);
+                gen(PUSH,rhs->op,0,0);
                 rhs->op=STACK;
         }
         gen(COMPARE,temp,NODE,rhs);
@@ -145,7 +140,7 @@ ok:
         if (isdleaf(rhs) || (temp == DREG && isaleaf(rhs))) {
             tranexp(rhs);
         } else {
-            gen(PUSH,temp);
+            gen(PUSH,temp,0,0);
             lhs->op=STACK;
             loadexp(rhs);
             temp = rhs->op;
@@ -156,12 +151,11 @@ ok:
         gen(COMPARE,temp,NODE,rhs);
     }
 usual:
-    gen(CNDJMP,op,setlabel(destin));
+    gen(CNDJMP,op,setlabel(destin),0);
 }
 
 
-setlabel(lab)
-register labstruc *lab;
+int setlabel(register labstruc *lab)
 {
     if (lab) {
         if (lab->labnum == 0) {
@@ -186,8 +180,7 @@ register labstruc *lab;
 }
 
 
-uselabel(lab)
-register labstruc *lab;
+int uselabel(register labstruc *lab)
 {
     if (lab->labnum) {
 #ifdef REGCONTS
@@ -202,8 +195,7 @@ register labstruc *lab;
 }
 
 
-isaleaf(node)
-expnode *node;
+int isaleaf(expnode *node)
 {
      switch(node->op) {
           case NAME:case CONST:return 1;
@@ -213,15 +205,13 @@ expnode *node;
 }
 
 
-isauto(p)
-expnode *p;
+int isauto(expnode *p)
 {
     return p->op == NAME && p->val.sp->storage == AUTO;
 }
 
 
-checkop(node)
-register expnode *node;
+int checkop(register expnode *node)
 {
     register expnode *lhs;
     int flag;
@@ -287,7 +277,7 @@ register expnode *node;
 }
 
 
-invrel(op)
+int invrel(int op)
 {
      switch(op){
           case EQ: return NEQ;
@@ -297,7 +287,7 @@ invrel(op)
 }
 
 
-revrel(op)
+int revrel(int op)
 {
       switch(op){
            case EQ:
@@ -309,8 +299,7 @@ revrel(op)
 }
 
 
-zeroconst(node)
-register expnode *node;
+int zeroconst(register expnode *node)
 {
      return node->op == CONST && !node->val.num;
 }

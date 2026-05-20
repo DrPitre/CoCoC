@@ -23,7 +23,7 @@ static long soffset;
 */
 
 
-preinit()
+int preinit(void)
 {
         lptr=line;
         *line='\0';
@@ -31,13 +31,13 @@ preinit()
 }
 
 
-blanks()
+int blanks(void)
 {
         while(cc==' ' || cc == '\t') getch();
 }
 
 
-getch()
+int getch(void)
 {
         if(cc= *lptr++)
                 ;
@@ -46,12 +46,12 @@ getch()
 }
 
 
-getlin()
+int getlin(void)
 {
         int lno, n, x;
         static char temp[LINESIZE];
         static direct int lineflg;
-        char *cgets();
+        char *cgets(void);
 
         if(lineflg == 0) {
                 lineflg = 1;
@@ -97,8 +97,11 @@ getlin()
 #ifdef SPLIT
                                 passthru();
 #endif
-                                fprintf(code," psect %s,0,0,%d,0,0\n",
-                                             temp,atoi(line));
+                                if (lwflag)
+                                        fprintf(code," SECTION code\n");
+                                else
+                                        fprintf(code," psect %s,0,0,%d,0,0\n",
+                                                     temp,atoi(line));
 #ifdef SPLIT
                                 passthru();
 #endif
@@ -158,8 +161,7 @@ getlin()
 
 /* this atoi is smaller than the library version */
 #ifdef _OS9
-atoi(s)
-register char *s;
+int atoi(register char *s)
 {
         int n = 0;
 
@@ -171,8 +173,7 @@ register char *s;
 #endif
 
 
-char *
-cgets()                 /* Function to input a line of source.
+char *cgets(void)       /* Function to input a line of source.
                          * Returns a pointer to the start of the line
                          * if all is well.
                          * Returns NULL on end of file.
@@ -216,4 +217,3 @@ cgets()                 /* Function to input a line of source.
         symptr = line;
         fatal("input line too long");   /* NO RETURN ! */
 }
-

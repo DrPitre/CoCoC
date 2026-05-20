@@ -11,6 +11,7 @@
 # include <module.h>
 #else
 # include <signal.h>
+# include <sys/wait.h>
 #endif
 #include <errno.h>
 #include <fcntl.h>
@@ -136,6 +137,11 @@ char **argv;
 						mflag = TRUE;
 						break;
 
+					case 'L':       /* use LWTOOLS assembler syntax (default) */
+						lwflag = TRUE;
+						oflag = FALSE;          /* dco68 expects RMA syntax */
+						break;
+
 					case 'n':                      /* give module a name (L) */
 						*--p = '-';
 						modname = p;
@@ -173,6 +179,11 @@ char **argv;
 							goto saver;
 						strcat (rlib, "/");
 						goto saver;
+						break;
+
+					case 'R':                 /* use legacy RMA/RLINK flow */
+						lwflag = FALSE;
+						oflag = TRUE;
 						break;
 
 					case 's':                       /* no stack checking (C) */
@@ -354,6 +365,9 @@ saver:
 			if (pflag)
 				splcat ("-p");          /* wants profiler code */
 
+			if (lwflag)
+				splcat ("-L");          /* LWTOOLS-compatible assembly */
+
 			splcat (srcfile);
 
 			trmcat ();
@@ -365,7 +379,7 @@ saver:
 		}
 
 		/* now assemble and perhaps optimize it */
-		if (aflag || nullflag || (suffarray[j] == 'r')) {
+		if (aflag || nullflag || (suffarray[j] == 'r') || (lwflag && (suffarray[j] == 'o'))) {
 			lasfilp = 0;                /* is .r so no work to do */
 		} else {
 			/* don't optimize ".a" or ".o" files */
@@ -409,25 +423,34 @@ saver:
 
 				if ((filcnt == 1) && !rflag) {
 					strcpy (destfile, tmpname);
-					chgsuff (destfile, 'r');
+					chgsuff (destfile, lwflag ? 'o' : 'r');
 				} else {
 					if (fflag && rflag) {
 						strcpy (destfile, rlib);
 						strcat (destfile, objname);
 					} else {
-						chgsuff (namarray[j], 'r');
+						chgsuff (namarray[j], lwflag ? 'o' : 'r');
 						strcpy (destfile, rlib);
 						strcat (destfile, namarray[j]);
 					}
 				}
-				sprintf (ofn, "-o=%s", destfile);
-				splcat (ofn);
+				if (lwflag) {
+					splcat ("--format=obj");
+					splcat ("--pragma=pcaspcr,condundefzero,undefextern,dollarnotlocal,noforwardrefmax,export");
+					splcat ("--no-warn=ifp1");
+					splcat ("--6309");
+					splcat ("-o");
+					splcat (destfile);
+				} else {
+					sprintf (ofn, "-o=%s", destfile);
+					splcat (ofn);
+				}
 
 				splcat (srcfile);
 
 				trmcat ();
 				lasfilp = destfile;
-				runit (ASSEMBLER, 0);
+				runit (lwflag ? LWASSEMBLER : ASSEMBLER, 0);
 				if (deltmpflg)
 					unlink (srcfile);
 			}
@@ -442,31 +465,42 @@ saver:
 
 	if (!fflag)
 		chgsuff (objname, '\0');
-	sprintf (ofn, "-o=%s", objname);
-	splcat (ofn);
+	if (lwflag) {
+		splcat ("--format=os9");
+		splcat ("--entry=_cstart");
+		sprintf (ofn, "--output=%s", objname);
+		splcat (ofn);
+	} else {
+		sprintf (ofn, "-o=%s", objname);
+		splcat (ofn);
+	}
 
-	if (edition)
+	if (!lwflag && edition)
 		splcat (edition);
-	if (mflag)
+	if (mflag && lwflag) {
+		sprintf (ofn, "--map=%s.map", objname);
+		splcat (ofn);
+	} else if (mflag) {
 		splcat ("-m");
-	if (xtramem)
+	}
+	if (!lwflag && xtramem)
 		splcat (xtramem);
-	if (modname)
+	if (!lwflag && modname)
 		splcat (modname);
-	if (s2flg)
+	if (!lwflag && s2flg)
 		splcat ("-s");
 
 	if (!(p = chkccdev ()))
 		error ("can't find default drive");
 
 	if (bflag) {
-		strcpy (ofn, mainline);	/* use cstart.r or whatever */
+		strcpy (ofn, mainline);	/* use alternate startup object */
 	} else {
-		sprintf (ofn, "%s%s%s", p, libdir, mainline);	/* global */
+		sprintf (ofn, "%s%s%s", p, libdir, lwflag ? "cstart.o" : mainline);
 	}
 	splcat (ofn);
 
-	if ((filcnt == 1) && (suffarray[0] != 'r')) {
+	if ((filcnt == 1) && (suffarray[0] != 'r') && !(lwflag && (suffarray[0] == 'o'))) {
 		splcat (thisfilp = destfile);
 	} else {
 		for (thisfilp = 0, j = 0; j < filcnt; ++j) {
@@ -476,6 +510,33 @@ saver:
 
 	for (j = 0; j < libcnt; j++) {
 		splcat (libarray[j]);
+	}
+
+	if (lwflag) {
+		if (!xflag) {
+			sprintf (ofn, "-L%s%s", p, libdir);
+			splcat (ofn);
+		}
+
+		if (lgflg)
+			splcat ("-lcgfx");
+
+		if (llflg)
+			splcat ("-llexlib");
+
+		if (lsflg)
+			splcat ("-lsys");
+
+		if (p2flg)
+			splcat ("-ldbg");
+
+		splcat (tflag ? "-lct" : "-lc");
+
+		trmcat ();
+		lasfilp = 0;
+		runit (LWLINKER, 0);
+		cleanup ();
+		exit (0);
 	}
 
 	if (lgflg) {
@@ -521,8 +582,16 @@ int code;
 #else
 	if ((childid = fork()) == 0) { /* we're the child */
 		char foo[4096];
+		int rc;
 		sprintf(foo, "%s%s", cmd, parmbuf);
-		exit(system (foo)); /* don't clean up */
+		rc = system (foo);
+		if (rc == -1)
+			exit(1);
+		if (WIFEXITED(rc))
+			exit(WEXITSTATUS(rc));
+		if (WIFSIGNALED(rc))
+			exit(128 + WTERMSIG(rc));
+		exit(1);
 	} else if (childid < 0) { /* fork failed */
 		error ("can't run '%s' -- fork() failed, reason: %s", cmd, strerror(errno));
 		return;
@@ -667,11 +736,13 @@ usage()
 		"   -dSYM[=val]  Define a preprocessor symbol",
 		"   -f=<path>    Output to path",
 		"   -k           Use maximum K&R compatibility mode",
+		"   -L           Use LWTOOLS lwasm/lwlink object and link flow (default)",
 		"   -o           Do not run optimizer",
 		"   -O           Stop after optimizing assembly code",
 		"   -p           Add profiling code",
 		"   -P           Use special debugging profiler and library",
-		"   -r           Stop after assembly (do not link)",
+		"   -r           Stop after object generation (do not link)",
+		"   -R           Use legacy RMA/RLINK object and link flow",
 		"   -s           Disable stack checks",
 		"   -T[=path]    Use alternate temporary directory",
 		"   -q           Quiet mode (write to 'c.errors' instead of screen)",
@@ -682,14 +753,14 @@ usage()
 		"   -b=<path>    Use an alternate \"cstart\"",
 		"   -e<#>        Set edition of output module",
 		"   -l=<path>    Link with a library file",
-		"   -lg          Link with cgfx.l             (Graphics library)",
-		"   -ll          Link with lexlib.l         (Lex helper library)",
-		"   -ls          Link with sys.l                (System library)",
+		"   -lg          Link with graphics library",
+		"   -ll          Link with lex helper library",
+		"   -ls          Link with system library",
 		"   -M           Ask linker for linkage map",
 		"   -m<##[K]>    Set memory size for output module",
 		"   -n=<name>    Set name of output module",
 		"   -S           Ask linker for symbol table",
-		"   -t           Link with clibt.l (Transcendental math library)",
+		"   -t           Link with transcendental math library",
 		"   -x           Use current directory for the main library",
 		NULL
 	};

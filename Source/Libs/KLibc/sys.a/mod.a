@@ -2,12 +2,6 @@
 * Module access system calls
 *
 
-shiftla macro
- rept \1
- lsla
- endr
- endm
-
  use /dd/defs/os9defs.a
  psect mod_a,0,0,1,0,0
 
@@ -15,7 +9,10 @@ shiftla macro
 modlink: pshs y,u save environment
  ldx 6,s get module name pointer
  lda 9,s get type
- shiftla 4 shift to m.s nibble
+ lsla shift to m.s nibble
+ lsla
+ lsla
+ lsla
  ora 11,s and language
 
  os9 F$Link call os9
@@ -32,7 +29,10 @@ modcom
 modload: pshs y,u save environment
  ldx 6,s get module name pointer
  lda 9,s get type
- shiftla 4
+ lsla
+ lsla
+ lsla
+ lsla
  ora 11,s and type
 
  os9 F$Load call os9

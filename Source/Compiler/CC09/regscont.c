@@ -1,24 +1,24 @@
 #ifdef REGCONTS
 #include "cj.h"
 
-static wlktr();
-static fixnode();
-static graft();
+static int wlktr(expnode *);
+static int fixnode(expnode *);
+static int graft(expnode *, expnode *);
 
 direct expnode *dregcont,*xregcont,*currexpr;
 /* extern int fixnode(),graft(); */
-extern expnode *subtree(),*treecont(),*regcont();
+extern expnode *subtree(expnode *, expnode *), *treecont(expnode *, int),
+               *regcont(expnode *);
 
 
-clrconts()
+int clrconts(void)
 {
     setdreg(NULL);
     setxreg(NULL);
 }
 
 
-setdreg(tree)
-register expnode *tree;
+int setdreg(register expnode *tree)
 {
     walktree(tree,fixnode);
     if (dregcont) {
@@ -46,8 +46,7 @@ register expnode *tree;
 }
 
 
-setxreg(tree)
-register expnode *tree;
+int setxreg(register expnode *tree)
 {
     walktree(tree,fixnode);
     if (xregcont) {
@@ -75,8 +74,7 @@ register expnode *tree;
 }
 
 
-setcurr(tree)
-register expnode *tree;
+int setcurr(register expnode *tree)
 {
     walktree(tree,fixnode);
     if (currexpr) {
@@ -97,8 +95,7 @@ register expnode *tree;
 }
 
 
-cmptrees(tree,cont)
-register expnode *tree, *cont;
+int cmptrees(register expnode *tree, register expnode *cont)
 {
     if (cont == NULL) return tree == NULL;
     if (tree == NULL) return 0;
@@ -112,9 +109,7 @@ register expnode *tree, *cont;
 }
 
 
-expnode *
-subtree(tree,cont)
-register expnode *tree,*cont;
+expnode * subtree(register expnode *tree, register expnode *cont)
 {
     expnode *t;
 
@@ -125,9 +120,7 @@ register expnode *tree,*cont;
 }
 
 
-expnode *
-treecont(tree,op)
-register expnode *tree;
+expnode *treecont(register expnode *tree, int op)
 {
     expnode *t;
 
@@ -141,9 +134,7 @@ register expnode *tree;
 }
 
 
-expnode *
-regcont(tree)
-register expnode *tree;
+expnode * regcont(register expnode *tree)
 {
     expnode *t;
 
@@ -171,9 +162,7 @@ register expnode *tree;
 }
 
 
-static
-fixnode(tree)
-register expnode *tree;
+static int fixnode(register expnode *tree)
 {
     if (tree) {
         if (tree->op & INDIRECT) {
@@ -199,9 +188,7 @@ register expnode *tree;
 }
 
 
-static
-graft(limb,tree)
-register expnode *limb, *tree;
+static int graft(register expnode *limb, register expnode *tree)
 {
     if (limb && tree->left == NULL && tree->right == NULL) {
         nodecopy(limb,tree);
@@ -211,9 +198,7 @@ register expnode *limb, *tree;
 }
 
 
-expnode *
-treecopy(tree)
-register expnode *tree;
+expnode * treecopy(register expnode *tree)
 {
     expnode *t;
 
@@ -226,8 +211,7 @@ register expnode *tree;
 }
 
 
-rplcnode(tree,reg)
-register expnode *tree;
+int rplcnode(register expnode *tree, int reg)
 {
     tree->op = reg;
     tree->val.num = 0;
@@ -236,20 +220,16 @@ register expnode *tree;
     tree->left = tree->right = NULL;
 }
 
-static int (*walkfunc)();
+static int (*walkfunc)(expnode *);
 
-walktree(tree,funct)
-expnode *tree;
-int (*funct)();
+int walktree(expnode *tree, int (*funct)(expnode *))
 {
     walkfunc = funct;
     wlktr(tree);
 }
 
 
-static
-wlktr(tree)
-register expnode *tree;
+static int wlktr(register expnode *tree)
 {
     if (tree) {
         wlktr(tree->left);

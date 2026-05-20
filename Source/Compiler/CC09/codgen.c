@@ -10,7 +10,7 @@
                         to look like "leax >a,y" instead of "leax <a".
         29-Aug-83       Function calls in the form of (*((int(*)())0xfffe))();
                         did not defreference properly.
-        26-Dec-83       Moved profexit code from gen(RETURN....) to
+        26-Dec-83       Moved profexit code from gen(RETURN....,0,0,0) to
                         allow returning local storage after call to eprof.
         17-Apr-84 LAC   Conversion for UNIX.
         01-Apr-86 LAC   clear knowledge of D contents for long and float ops.
@@ -19,8 +19,11 @@
 
 #include "cj.h"
 
-static addoff();
-static outlea();
+static int addoff(int);
+static void outlea(int), outstr(int, int);
+static void doref(int, int, cval_t, int);
+static void mwsyscall(char *), lcall(char *), fcall(char *);
+static void trouble(int, cval_t, expnode *);
 
 direct int datflag;
 
@@ -32,18 +35,17 @@ static char *lbra = "lbra ";
 static char *clra = "clra";
 static char *unkopr = "unknown operator: ";
 
-extern char *getrel(),regname();
+extern char *getrel(int);
+extern char regname(int);
 
 
-gen(op,rtype,arg,val)
-register int op,rtype;
-register expnode *val;
-register int arg;
+int gen(register int op, register int rtype, register cval_t arg, register expnode *val)
 {
     register expnode *ptr;
     register symnode *sptr;
     int reg;
-    int temp,value;
+    int temp;
+    cval_t value;
 
     if (op==LONGOP) {
         dolongs(rtype,arg);
@@ -246,7 +248,7 @@ dooff:
             ot("sub");
             goto simple;
         case RSUB:
-            gen(NEG);
+            gen(NEG,0,0,0);
         case PLUS:
             ot("add");
 simple:
@@ -300,8 +302,7 @@ leaexit:
 }
 
 
-char
-regname(r)
+char regname(int r)
 {
     switch (r) {
         case DREG:  return 'd';
@@ -315,21 +316,20 @@ regname(r)
 }
 
 
-transfer(r1,r2)
+int transfer(int r1, int r2)
 {
     fprintf(code," tfr %c,%c\n",r1,r2);
 }
 
 
-dolongs(op,arg)
-int *arg;
+int dolongs(int op, int *arg)
 {
     switch (op) {
         case STACK:
             gen(LOAD,DREG,XIND,2);
-            gen(PUSH,DREG);
+            gen(PUSH,DREG,0,0);
             gen(LOAD,DREG,XIND,0);
-            gen(PUSH,DREG);
+            gen(PUSH,DREG,0,0);
             break;
         case TEST:
             ol("lda 0,x\n ora 1,x\n ora 2,x\n ora 3,x");
@@ -385,8 +385,7 @@ int *arg;
     these breaks are returns, because setdreg() isn't used.
 */
 #ifdef  DOFLOATS
-dofloats(op,arg)
-register int arg;
+int dofloats(int op, register int arg)
 {
     switch (op) {
         case FCONST:    getcon(arg,DOUBLESIZE/2,TRUE); break;
@@ -433,8 +432,7 @@ register int arg;
 #endif
 
 
-getcon(p,n,f)
-int *p;
+int getcon(int *p, int n, int f)
 {
     int temp;
 
@@ -446,12 +444,10 @@ int *p;
 }
 
 #ifdef IEEE_FLOATS
-double dadjust();
+double dadjust(double);
 #endif
 
-defcon(p,n,f)
-register int16_t *p;
-int n, f;
+int defcon(register int16_t *p, int n, int f)
 {
     register int i;
 
@@ -520,7 +516,7 @@ int n, f;
 }
 
 
-mwsyscall(s)
+static void mwsyscall(char *s)
 {
     ot(lbsr);
     ol(s);
@@ -528,7 +524,7 @@ mwsyscall(s)
 }
 
 
-lcall(s)
+static void lcall(char *s)
 {
     ot(lbsr);
     ol(s);
@@ -536,16 +532,14 @@ lcall(s)
 }
 
 
-fcall(s)
+static void fcall(char *s)
 {
     ot(lbsr);
     ol(s);
 }
 
 
-trouble(op,arg,val)
-register int op,arg;
-register expnode *val;
+static void trouble(register int op, register cval_t arg, register expnode *val)
 {
     char *s;
     int cflag,temp;
@@ -579,7 +573,7 @@ register expnode *val;
             }
             break;
         case CONST:
-            switch (temp = ((int)val >> 8) & 0xff) {
+            switch (temp = ((cval_t)val >> 8) & 0xff) {
                 case 0:
                     if (op == AND) ol(clra);
                     break;
@@ -593,7 +587,7 @@ register expnode *val;
                     ot(s);
                     doref('a',CONST,temp,0);
             }
-            switch (temp = (int)val & 255) {
+            switch (temp = (cval_t)val & 255) {
                 case 0:
                     if (op == AND) ol("clrb");
                     break;
@@ -619,7 +613,7 @@ register expnode *val;
 }
 
 
-doref(reg,arg,val,offset)
+static void doref(int reg, int arg, cval_t val, int offset)
 {
     ob(reg);
     ob(' ');
@@ -628,9 +622,7 @@ doref(reg,arg,val,offset)
 }
 
 
-static
-addoff(offset)
-register int offset;
+static int addoff(register int offset)
 {
     if(offset) {
         if(offset > 0) ob('+');
@@ -639,7 +631,7 @@ register int offset;
 }
 
 
-deref(arg,val,offset)
+void deref(int arg, cval_t val, int offset)
 {
     register expnode *node;
     register symnode *sn;
@@ -724,8 +716,7 @@ dooff:
 }
 
 
-char *
-getrel(op)
+char *getrel(int op)
 {
     switch (op) {
         default:    error("rel op");
@@ -743,40 +734,39 @@ getrel(op)
 }
 
 
-ot(s)
+void ot(char *s)
 {
     putc(' ',code);
     os(s);
 }
 
 
-ol(s)
+void ol(char *s)
 {
     ot(s);
     nl();
 }
 
 
-nl()
+void nl(void)
 {
     putc('\n',code);
 }
 
 
-ob(b)
+void ob(int b)
 {
     putc(b,code);
 }
 
 
-os(s)
-char *s;
+void os(char *s)
 {
     fputs(s,code);
 }
 
 
-od(n)
+void od(cval_t n)
 {
 #ifdef _OS9
     fprintf(code,"%d",n & 0xFFFF);
@@ -786,7 +776,7 @@ od(n)
 }
 
 
-label(n)
+void label(int n)
 {
     olbl(n);
     lastst = 0;
@@ -794,21 +784,20 @@ label(n)
 }
 
 
-olbl(n)
+void olbl(int n)
 {
     ob(UNIQUE);
     od(n);
 }
 
 
-on(s)
-char *s;
+void on(char *s)
 {
     fprintf(code,"%.8s",s);
 }
 
 
-modstk(nsp)
+int modstk(int nsp)
 {
     int x;
 
@@ -822,7 +811,7 @@ modstk(nsp)
 }
 
 
-nlabel(ptr,scope)
+void nlabel(char *ptr, int scope)
 {
     on(ptr);
     if (scope) ob(':');
@@ -830,14 +819,13 @@ nlabel(ptr,scope)
 }
 
 
-static
-outlea(reg)
+static void outlea(int reg)
 {
     fprintf(code," lea%c ",reg);
 }
 
 
-outstr(reg,l)
+static void outstr(int reg, int l)
 {
     outlea(reg);
     fprintf(code,"%c%d,pcr\n",UNIQUE,l);

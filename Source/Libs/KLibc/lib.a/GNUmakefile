@@ -1,4 +1,4 @@
-OFILES1 = swab.o pwcryp.o bsearch.o dirutil.o errmsg.o prgname.o \
+OFILES1 = swab.o pwcryp.o bsearch.o qsort.o dirutil.o errmsg.o prgname.o \
           datmods.o devtyp.o skip.o sets.o pflinit.o
 OFILES2 = fopen.o puts.o gets.o mktemp.o fread.o fwrite.o printf.o
 OFILES3 = setbuf.o fseek.o putc.o ftelldummy.o getc.o flshdummy.o setbase.o \

@@ -388,7 +388,7 @@ gch(){
 	return(c);
 	}
 mn2(a,d,c)
-  int a,d,c;
+  int a; lexval_t d,c;
 	{
 	name[tptr] = a;
 	left[tptr] = d;
@@ -424,7 +424,7 @@ mn2(a,d,c)
 	return(tptr++);
 	}
 mn1(a,d)
-  int a,d;
+  int a; lexval_t d;
 	{
 	name[tptr] = a;
 	left[tptr] = d;
@@ -433,7 +433,7 @@ mn1(a,d)
 	switch(a){
 	case RCCL:
 	case RNCCL:
-		if(slength(d) == 0) nullstr[tptr] = TRUE;
+		if(slength((char *)d) == 0) nullstr[tptr] = TRUE;
 		break;
 	case STAR:
 	case QUEST:

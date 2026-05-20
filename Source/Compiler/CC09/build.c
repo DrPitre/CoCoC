@@ -10,12 +10,10 @@
 
 #include "cj.h"
 
-static elsize(prim);
+static int elsize(expnode **);
 
 
-expnode *
-parsexp(priority)
-int priority;
+expnode * parsexp(int priority)
 {
     register expnode *rhs,*lhs,*temp;
     register int op,priop,lno,rprec;
@@ -64,8 +62,7 @@ exit:
 }
 
 
-expnode *
-primary()
+expnode * primary(void)
 {
     register expnode *nodep,*prim;
     expnode *temp;
@@ -191,8 +188,7 @@ dblop:      nodep = newnode(sym,nodep,0,LEV_14,symline,symptr);
 }
 
 
-expnode *
-explist()
+expnode * explist(void)
 {
     register expnode *list = NULL, *ptr;
 
@@ -209,8 +205,7 @@ explist()
 }
 
 
-constexp(p)
-int p;
+int constexp(int p)
 {
     register expnode *ptr;
     register int v;
@@ -225,7 +220,7 @@ int p;
 }
 
 
-isop()
+int isop(void)
 {
     switch (sym) {
         case AMPER:
@@ -252,7 +247,7 @@ isop()
 }
 
 
-constop(op,r,l)
+int constop(int op, cval_t r, cval_t l)
 {
     switch(op) {
         case PLUS:      return r + l;
@@ -285,8 +280,8 @@ constop(op,r,l)
         case UGEQ:
         case UGT:
             {
-                char *lp,*rp;
-                lp = (char *) l;  rp = (char *) r;
+                unsigned int lp = l & 0xffff;
+                unsigned int rp = r & 0xffff;
                 switch (op) {
                     case ULEQ:      return rp <= lp;
                     case ULT:       return rp < lp;
@@ -300,11 +295,11 @@ constop(op,r,l)
 }
 
 
-expnode *
-getcast()
+expnode * getcast(void)
 {
     expnode *dptr,*ptr;
-    int lno,dummy,size,type;
+    int lno,dummy,type;
+    cval_t size;
     register char *errpnt;
 
     lno = symline;
@@ -325,10 +320,7 @@ getcast()
 }
 
 
-expnode *
-newnode(op,left,right,value,lno,errpnt)
-expnode *left,*right;
-char *errpnt;
+expnode *newnode(int op, expnode *left, expnode *right, cval_t value, int lno, char *errpnt)
 {
     register expnode *node;
 
@@ -348,15 +340,13 @@ char *errpnt;
 }
 
 
-experr()
+int experr(void)
 {
     error("expression missing");
 }
 
 
-static
-elsize(prim)
-expnode **prim;
+static int elsize(expnode **prim)
 {
     register expnode *p;
 
@@ -375,4 +365,3 @@ usual:      return getsize(p->type,p->size,p->dimptr);
             return elsize(&p->right);
     }
 }
-

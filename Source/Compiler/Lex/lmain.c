@@ -193,11 +193,11 @@ free3core(){
 # endif
 char *myalloc(a,b)
   int a,b; {
-	register int i;
+	register char *i;
 	i = calloc(a, b);
 	if(i==0)
 		warning("OOPS - calloc returns a 0");
-	else if(i == -1){
+	else if(i == (char *)-1){
 # ifdef DEBUG
 		warning("calloc returns a -1");
 # endif

@@ -28,11 +28,13 @@ General options:
 	-dSYM[=val]	Define a preprocessor symbol
 	-f=<path>	Output to path
 	-k			Pre-process for maximum K&R compatibility
+	-L			Use LWTOOLS lwasm/lwlink object and link flow (default)
 	-o			Skip running the optimizer
 	-O			Stop after optimizing assembly code
 	-p			Add profiling code
 	-P			Use special debugging profiler and library
-	-r			Stop after assembly (do not link)
+	-r			Stop after object generation (do not link)
+	-R			Use legacy RMA/RLINK object and link flow
 	-s			Disable stack checking (be careful!)
 	-T[=path]	Use alternate temporary directory
 	-q			Quiet (status to 'c.errors' instead of screen)
@@ -44,14 +46,14 @@ Linker options:
 	-b[=path]	Use an alternate "cstart"
 	-e<#>		Set edition of output module
 	-l=<path>	Link with a library file
-	-lg			Link with cgfx.l	(Graphics library)
-	-ll			Link with lexlib.l	(Lex helper library)
-	-ls			Link with sys.l		(System library)
+	-lg			Link with graphics library
+	-ll			Link with lex helper library
+	-ls			Link with system library
 	-M			Ask linker for linkage map
 	-m<##[K]>	Add additional memory needs for output module
 	-n=<name>	Set name of output module
 	-S			Ask linker for symbol table
-	-t			Link with clibt.l (Transcendental math library)
+	-t			Link with transcendental math library
 	-x			Use the work directory for the main library
 
 Authors

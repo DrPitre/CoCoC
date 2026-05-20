@@ -15,7 +15,7 @@
  *                             *
  *******************************/
 
-static swcherr();
+static int swcherr(void);
 
 typedef struct casestct {
     struct casestct *clink;     /* next case in case list */
@@ -44,11 +44,11 @@ extern  expnode *dregcont,      /* D register content */
                 *xregcont;      /* X register content */
 #endif
 
-static  expnode *emit(), *getptest(), *gettest(), *sidexp();
+static expnode *emit(expnode *), *getptest(void), *gettest(void), *sidexp(int);
 
-static  symnode *checklabel();
+static symnode *checklabel(void);
 
-statement()
+int statement(void)
 {
    if (sym!=SEMICOL) lastst=0;
 
@@ -107,7 +107,7 @@ tryexp:
 }
 
 
-doif()
+int doif(void)
 {
     register expnode *ptr;
     labstruc tl,fl;
@@ -135,7 +135,7 @@ doif()
         if (sym != SEMICOL) {
             if (et == 0) {
                 et = 1;
-                gen(JMP,tl.labnum = getlabel(),0);
+                gen(JMP,tl.labnum = getlabel(),0,0);
 #ifdef REGCONTS
                 tl.labdreg = dregcont;
                 tl.labxreg = xregcont;
@@ -151,7 +151,7 @@ doif()
 }
 
 
-dowhile()
+int dowhile(void)
 {
     register expnode *ptr;
     labstruc brk,cnt,*savbreak,*savcont;
@@ -180,7 +180,7 @@ dowhile()
     if (sym == SEMICOL)
         tlab = cnt.labnum;
     else {
-        gen(JMP,cnt.labnum,0);
+        gen(JMP,cnt.labnum,0,0);
         label(tlab = getlabel());
         statement();
     }
@@ -195,7 +195,7 @@ dowhile()
 }
 
 
-doswitch()
+int doswitch(void)
 {
     register expnode *ptr;
     labstruc brk,*savbreak;
@@ -238,16 +238,16 @@ doswitch()
     else experr();
     need(RPAREN);
 
-    gen(JMP,tests=getlabel(),0);
+    gen(JMP,tests=getlabel(),0,0);
     statement();
 
-    if (lastst == 0) gen(JMP,setlabel(&brk),0);
+    if (lastst == 0) gen(JMP,setlabel(&brk),0,0);
 
     label(tests);
     cptr = caseptr;
     while (cptr) {
         temp = cptr->clink;
-        gen(JMPEQ,cptr->clab,cptr->cval);
+        gen(JMPEQ,cptr->clab,cptr->cval,0);
         cptr->clink = freecase;
         freecase = cptr;
         cptr = temp;
@@ -257,7 +257,7 @@ doswitch()
     clrconts();
 #endif
     if (deflabel) {
-        gen(JMP,deflabel,0);
+        gen(JMP,deflabel,0,0);
 #ifdef REGCONTS
         dregcont = treecopy(brk.labdreg);
         xregcont = treecopy(brk.labxreg);
@@ -274,7 +274,7 @@ doswitch()
 }
 
 
-docase()
+int docase(void)
 {
     register casnode *ptr;
     register int val;
@@ -302,7 +302,7 @@ docase()
 }
 
 
-dodefault()
+int dodefault(void)
 {
     getsym();
     if (swflag == 0) swcherr();
@@ -315,13 +315,13 @@ dodefault()
 }
 
 
-static swcherr()
+static int swcherr(void)
 {
        error("no switch statement");
 }
 
 
-dodo()
+int dodo(void)
 {
     labstruc brk,cnt,*savbreak,*savcont;
     int looptop;
@@ -353,7 +353,7 @@ dodo()
 }
 
 
-dofor()
+int dofor(void)
 {
     labstruc brk,cnt,tst,*savbreak,*savcont;
     int slab;
@@ -383,7 +383,7 @@ dofor()
     if (sym!=SEMICOL) {
         /* there IS a test */
         tptr = gettest();
-        gen(JMP,setlabel(&tst),0);
+        gen(JMP,setlabel(&tst),0,0);
     }
     need(SEMICOL);
 
@@ -408,7 +408,7 @@ dofor()
         uselabel(&tst);
         cnt.labnum = slab;
         dotest(tptr,&cnt,&brk,FALSE);
-    } else gen(JMP,slab,0);
+    } else gen(JMP,slab,0,0);
 
     uselabel(&brk);
 
@@ -417,7 +417,7 @@ dofor()
 }
 
 
-doreturn()
+int doreturn(void)
 {
     getsym();
     if (sym != SEMICOL) {
@@ -443,19 +443,19 @@ doreturn()
 common:
 #endif
                     if(ptr->op!=FREG) {
-                        gen(LOADIM,UREG,FREG);
-                        gen(PUSH,UREG);
+                        gen(LOADIM,UREG,FREG,0);
+                        gen(PUSH,UREG,0,0);
 #ifdef  DOFLOATS
                         switch(ftype) {
                             case FLOAT:
                             case DOUBLE:
-                                gen(DBLOP,MOVE,ftype);
+                                gen(DBLOP,MOVE,ftype,0);
                                 break;
                             default:
-                                gen(LONGOP,MOVE);
+                                gen(LONGOP,MOVE,0,0);
                         }
 #else
-                        gen(LONGOP,MOVE);
+                        gen(LONGOP,MOVE,0,0);
 #endif
                     }
                     break;
@@ -469,12 +469,12 @@ common:
     }
 
     modstk(0);
-    gen(RETURN,0,0);
+    gen(RETURN,0,0,0);
     lastst=RETURN;
 }
 
 
-dobreak()
+int dobreak(void)
 {
     if (breakptr) modnjmp(breakptr);
     else error("break error");
@@ -483,7 +483,7 @@ dobreak()
 }
 
 
-docont()
+int docont(void)
 {
     if (contptr) modnjmp(contptr);
     else error("continue error");
@@ -492,15 +492,14 @@ docont()
 }
 
 
-modnjmp(labptr)
-register labstruc *labptr;
+int modnjmp(register labstruc *labptr)
 {
     modstk(labptr->labsp);
-    gen(JMP,setlabel(labptr),0);
+    gen(JMP,setlabel(labptr),0,0);
 }
 
 
-dogoto()
+int dogoto(void)
 {
     register symnode *ptr;
 
@@ -509,7 +508,7 @@ dogoto()
     if (sym != NAME) error("label required");
     else {
         if (ptr = checklabel()) {
-            gen(GOTO,ptr->offset,0);
+            gen(GOTO,ptr->offset,0,0);
             ptr->x.labflg |= GONETO;
         }
         getsym();
@@ -518,7 +517,7 @@ dogoto()
 }
 
 
-dolabel()
+int dolabel(void)
 {
     register symnode *ptr;
 
@@ -526,7 +525,7 @@ dolabel()
         if (ptr->storage == STATIC) multidef();
         else {
             ptr->storage = STATIC;
-            gen(LABEL,ptr->offset,0);
+            gen(LABEL,ptr->offset,0,0);
             ptr->x.labflg |= DEFINED;
         }
     }
@@ -538,8 +537,7 @@ dolabel()
 }
 
 
-static symnode *
-checklabel()
+static symnode * checklabel(void)
 {
     register symnode *ptr;
 
@@ -565,8 +563,7 @@ checklabel()
 }
 
 
-static expnode *
-sidexp(l)
+static expnode *sidexp(int l)
 {
     register expnode *ptr;
 
@@ -575,9 +572,7 @@ sidexp(l)
 }
 
 
-static expnode *
-emit(ptr)
-register expnode *ptr;
+static expnode * emit(register expnode *ptr)
 {
     chkdecl(ptr);
     switch (ptr->op) {
@@ -594,8 +589,7 @@ register expnode *ptr;
 }
 
 
-static expnode *
-getptest()
+static expnode * getptest(void)
 {
     register expnode *ptr;
 
@@ -606,8 +600,7 @@ getptest()
 }
 
 
-static expnode *
-gettest()
+static expnode * gettest(void)
 {
     register expnode *ptr;
 
@@ -617,9 +610,7 @@ gettest()
 }
 
 
-dotest(ptr,tl,fl,nj)
-register expnode *ptr;
-labstruc *tl,*fl;
+int dotest(register expnode *ptr, labstruc *tl, labstruc *fl, int nj)
 {
     if (ptr) {
         tranbool(ptr,tl,fl,nj);

@@ -10,6 +10,9 @@
 	I hope the comments help...
 */
 
+#ifdef strcpy
+# undef strcpy
+#endif
 extern char *strcpy(), *copystr();
 extern macro *findmac();
 

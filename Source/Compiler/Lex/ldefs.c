@@ -1,4 +1,7 @@
 # include <stdio.h>
+# include <stdlib.h>
+# include <stdint.h>
+typedef intptr_t lexval_t;
 # define PP 1
 # ifdef unix
 
@@ -113,8 +116,8 @@ extern int prev;	/* previous input character */
 extern int pres;	/* present input character */
 extern int peek;	/* next input character */
 extern int *name;
-extern int *left;
-extern int *right;
+extern lexval_t *left;
+extern lexval_t *right;
 extern int *parent;
 extern char *nullstr;
 extern int tptr;
@@ -162,5 +165,5 @@ extern int optim;
 extern int *verify, *advance, *stoff;
 extern int scon;
 extern char *psave;
-extern char *calloc(), *myalloc();
+extern char *myalloc();
 extern int buserr(), segviol();

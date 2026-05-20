@@ -64,7 +64,7 @@ int levprd[NPROD] ;	/* precedence levels for the productions */
 char *
 newext(file,ext) char *file, *ext; {
 	int len = strlen (file);
-	char *out = malloc (len + strlen(ext));
+	char *out = malloc (len + strlen(ext) + 1);
 	char *tmp;
 
 	strcpy (out, file);

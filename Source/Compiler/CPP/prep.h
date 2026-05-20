@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
+#include <stdint.h>
 #include "defdir.h"
 
 #ifdef MAIN
@@ -60,6 +61,7 @@ extern int errno;
 #endif
 
 #define HIDER       0x7f    /* a seldom-used ascii value to hide quotes */
+#define LINEARG(n)  ((char *)(intptr_t)(n))
 
 #define SKIPSP      0       /* gch() skips white space and comments */
 #define KEEPSP      1       /* gch() skips comments, keeps white space */
@@ -156,7 +158,7 @@ extern long parsexp();
 extern long primary();
 
 extern macro *addmac();
-extern char *savestr(), *setfile(), *makename();
+extern char *grab(), *copystr(), *savestr(), *setfile(), *makename();
 
 extern gch();
 extern nxtch();

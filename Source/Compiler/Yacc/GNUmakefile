@@ -1,5 +1,8 @@
-CFLAGS=-O -g -m32 -DWORD32 \
-	-Wno-implicit-int -Wno-implicit-function-declaration
+CC=clang
+CFLAGS=-std=gnu89 -O -g -DWORD32 -DPARSER=\"$(CURDIR)/yaccpar\" \
+	-Wno-implicit-int -Wno-implicit-function-declaration \
+	-Wno-deprecated-non-prototype -Wno-int-conversion \
+	-Wno-return-mismatch -Wno-format
 head: yacc
 yacc: y1.o y2.o y3.o y4.o
 	$(CC) $(CFLAGS) -o yacc y?.o

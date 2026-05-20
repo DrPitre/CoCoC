@@ -1,5 +1,6 @@
 # include <stdio.h>
 # include <ctype.h>
+# include <stdarg.h>
 # include "files.h"
 
 	/*  MANIFEST CONSTANT DEFINITIONS */
@@ -234,6 +235,7 @@ extern char *cstash();
 extern struct looksets *flset();
 extern char *symnam();
 extern char *writem();
+extern void error(char *, ...);
 
 	/* default settings for a number of macros */
 

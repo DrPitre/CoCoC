@@ -16,7 +16,14 @@
 
 #include "cj.h"
 
-static double normaliz();
+#ifdef _LIL_END
+static double normaliz(int64_t *);
+int addin(int64_t *, char);
+#else
+static double normaliz(long *);
+#endif
+int isoct(char);
+int ishex(char);
 
 #define     isdigit(c)  (chartab[c]==DIGIT)
 
@@ -34,11 +41,11 @@ extern double atoftbl[];
 #endif
 direct int stringlen;
 
-extern symnode *lookup();
-extern char *grab();
+extern symnode *lookup(char []);
+extern char *grab(int);
 
 
-getsym()
+int getsym(void)
 {
     register symnode *ptr;
     register int numtype;
@@ -75,7 +82,7 @@ getsym()
                 }
             } else {
                 sym = NAME;
-                symval = (int) ptr;
+                symval = (cval_t) ptr;
             }
             break;
         case DIGIT:
@@ -98,7 +105,7 @@ donum:
                 case LONG:
                     longp = (long *) grab(sizeof(long));
                     *longp = *np.lp;
-                    symval = (int) longp;
+                    symval = (cval_t) longp;
 #ifdef DEBUG
                     fprintf(stderr,"getsym: symval=%04X, *longp=%08lX\n",
                             symval,*longp);
@@ -109,7 +116,7 @@ donum:
                 case DOUBLE:
                     dblp = (double *) grab(sizeof(double));
                     *dblp = *np.dp;
-                    symval = (int) dblp;
+                    symval = (cval_t) dblp;
                     sym = FCONST;
                     break;
 #endif
@@ -311,7 +318,7 @@ char valtab[] = {
 /*                                  OR              COMPL */
 };
 
-lexinit()
+int lexinit(void)
 {
 #ifdef  DOFLOATS
      install("double",DOUBLE);
@@ -358,10 +365,9 @@ lexinit()
 }
 
 
-getword (name)
-char *name;
+int getword(char *name)
 {
-    char            str[NAMESIZE];
+    char            str[NAMESIZE+1];
     int             count;
     register char   *p = str;
 
@@ -381,17 +387,14 @@ char *name;
 }
 
 
-an(c)
-int c;
+int an(int c)
 {
     return (chartab[c]==LETTER || chartab[c]==DIGIT);
 }
 
 direct  symnode *freesym;       /* list of free symbol table entries */
 
-symnode *
-lookup(name)
-char name[];
+symnode *lookup(char name[])
 {
     /* return a pointer to a symbol table entry for 'name'  */
     /* if one is not found create one                       */
@@ -431,9 +434,7 @@ char name[];
 }
 
 
-install(word,typ)
-char *word;
-int typ;
+int install(char *word, int typ)
 {
         /* put a keyword in the symbol table */
         register symnode *cptr;
@@ -450,8 +451,7 @@ int typ;
 }
 
 
-hash(word)
-register char *word;
+int hash(register char *word)
 {
     register int n = 0, c;
 
@@ -461,9 +461,7 @@ register char *word;
 }
 
 
-char *
-grab(size)
-int size;
+char * grab(int size)
 {
     char *oldptr;
 
@@ -477,11 +475,10 @@ int size;
 
 
 #ifdef  DOFLOATS
-number(type,np)
-register numptrs np;
+int number(int type, register numptrs np)
 {
     long i;
-    double n, scale(), normaliz();
+    double n;
     int exp, esign, digcount = 0;
     register char *cp;
 
@@ -618,8 +615,7 @@ longint:
 }
 
 #else   /* !DOFLOATS */
-number(np)
-register long *np;
+int number(register long *np)
 {
        long n;
        register char *cp;
@@ -685,7 +681,7 @@ register long *np;
 #endif  /* !DOFLOATS */
 
 
-pstr()
+int pstr(void)
 {
         getch();
 
@@ -706,7 +702,7 @@ pstr()
 static direct FILE *sfile;
 extern direct int datstring;
 
-qstr()
+int qstr(void)
 {
         switch(datstring) {
                 case 0:
@@ -774,8 +770,7 @@ fillstr:
 }
 
 
-oc(c)
-int c;
+int oc(int c)
 {
 #ifdef  SPLIT
         if(c == '\0' || c == '\\')
@@ -807,16 +802,16 @@ int c;
 }
 
 
-oz(n)
+int oz(int n)
 {
 #ifdef SPLIT
      passthru();
 #endif
-     fprintf(sfile," rzb %d\n",n);
+     fprintf(sfile,lwflag ? " rmb %d\n" : " rzb %d\n",n);
 }
 
 
-dobslash()
+int dobslash(void)
 {
         register int c,n;
 
@@ -865,40 +860,34 @@ dobslash()
 }
 
 
-isoct(c)
-char c;
+int isoct(char c)
 {
         return (c<='7' && c>='0');
 }
 
 
-ishex(c)
-char c;
+int ishex(char c)
 {
         return ( isdigit(c) ||  ((c &=0x5f) >='A' && c<='F')) ? c : 0;
 }
 
 
-static double
-normaliz(n)
 #ifdef _LIL_END
-int64_t *n;
+static double normaliz(int64_t *n)
 {
     return (double)(*n);
 }
 #else /* big endian */
-long n[];
+static double normaliz(long n[])
 {
     return n[0] * 4294967296. + n[1];
 }
 #endif
 
 #if defined(MWOS) && defined(_BIG_END)
-static numshf(n);
+static int numshf(char *);
 
-addin(n,c)
-register char n[];
-char c;
+int addin(register char n[], char c)
 {
     register int i,x;
     char ntemp[8];
@@ -916,9 +905,7 @@ char c;
 }
 
 
-static
-numshf(n)
-register char n[];
+static int numshf(register char n[])
 {
     register int i, x = 0;
 
@@ -931,9 +918,7 @@ register char n[];
 
 #else   /* portable but needs long long integers */
 
-addin(n,c)
-int64_t *n;
-char c;
+int addin(int64_t *n, char c)
 {
     int64_t val = *n;
 

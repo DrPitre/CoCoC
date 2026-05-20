@@ -59,8 +59,14 @@ char *pushptr = pushc;
 char *slptr = slist;
 
 # if (unix || ibm)
-char *cname = "/usr/local/share/lex/ncform";
-char *ratname = "/usr/local/share/lex/nrform";
+# ifndef CNAME
+# define CNAME "/usr/local/share/lex/ncform"
+# endif
+# ifndef RATNAME
+# define RATNAME "/usr/local/share/lex/nrform"
+# endif
+char *cname = CNAME;
+char *ratname = RATNAME;
 # endif
 
 # ifdef gcos
@@ -93,8 +99,8 @@ int chset;	/* 1 = char set modified */
 FILE *fin, *fother;
 int fptr;
 int *name;
-int *left;
-int *right;
+lexval_t *left;
+lexval_t *right;
 int *parent;
 char *nullstr;
 int tptr;

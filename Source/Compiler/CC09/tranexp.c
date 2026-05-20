@@ -4,7 +4,7 @@ direct int shiftflag;
 #ifdef REGCONTS
 extern direct expnode *dregcont,*xregcont,*currexpr;
 #endif
-extern expnode *transexp();
+extern expnode *transexp(expnode *);
 
 #define swap(x,y) {expnode *t; t=x; x=y; y=t;}
 
@@ -14,8 +14,7 @@ extern expnode *transexp();
  *                                     *
  ***************************************/
 
-lddexp(tree)
-register expnode *tree;
+int lddexp(register expnode *tree)
 {
     loadexp(tree);
     if (tree->op != DREG) {
@@ -29,8 +28,7 @@ register expnode *tree;
 }
 
 
-ldxexp(tree)
-register expnode *tree;
+int ldxexp(register expnode *tree)
 {
     tranxexp(tree);
     if (tree->op != XREG || tree->val.num) {
@@ -44,8 +42,7 @@ register expnode *tree;
 }
 
 
-loadexp(tree)
-register expnode *tree;
+int loadexp(register expnode *tree)
 {
     switch(tree->type) {
         case LONG:
@@ -65,8 +62,7 @@ register expnode *tree;
 }
 
 
-doload(tree)
-register expnode *tree;
+int doload(register expnode *tree)
 {
     switch (tree->op) {
         case STRING:
@@ -121,8 +117,7 @@ register expnode *tree;
 }
 
 
-expnode *tranexp(tree)
-register expnode *tree;
+expnode *tranexp(register expnode *tree)
 {
     register int op;
 
@@ -171,13 +166,13 @@ register expnode *tree;
                 break;
             case LTOI:
                 tranlexp(tree->left);
-                gen(LTOI,NODE,tree->left);
+                gen(LTOI,NODE,tree->left,0);
                 tree->op = DREG;
                 break;
 #ifdef  DOFLOATS
             case DTOI:
                 dload(tree->left);
-                gen(DBLOP,DTOI);
+                gen(DBLOP,DTOI,0,0);
                 tree->op = DREG;
                 break;
 #endif
@@ -193,7 +188,7 @@ register expnode *tree;
             case COMPL:
             case NEG:
                 lddexp(tree->left);
-                gen(op);
+                gen(op,0,0,0);
 #ifdef REGCONTS
                 setdreg(tree);      /* set D contents */
 #else
@@ -228,9 +223,7 @@ register expnode *tree;
 }
 
 
-tranbinop(op,node)
-int op;
-expnode *node;
+int tranbinop(int op, expnode *node)
 {
     register expnode *lhs,*rhs;
     int s;
@@ -254,7 +247,7 @@ expnode *node;
         case MINUS:
             if (!isaleaf(rhs) ) {
                 loadexp(rhs);
-                gen(PUSH,rhs->op);
+                gen(PUSH,rhs->op,0,0);
                 rhs->op=STACK;
                 lddexp(lhs);
             } else {
@@ -272,13 +265,13 @@ expnode *node;
                 swap(lhs,rhs);
 
             if (isreg(lhs->op)) {
-                gen(PUSH,lhs->op);
+                gen(PUSH,lhs->op,0,0);
                 lddexp(rhs);
                 rhs->op = STACK;
             } else {
                 lddexp(lhs);
                 if (!isaleaf(rhs)) {
-                    gen(PUSH,DREG);
+                    gen(PUSH,DREG,0,0);
                     lddexp(rhs);
                     rhs->op=STACK;
                 } else {
@@ -321,7 +314,7 @@ doshift:        if ((unsigned)s <= 4) {
                     while (s--)
                         switch (op) {
                             case SHL:
-                                gen(IDOUBLE);
+                                gen(IDOUBLE,0,0,0);
                                 break;
                             case SHR:
                                 gen ((lhs->size == 1) ? CHALVE : HALVE);
@@ -352,9 +345,9 @@ doshift:        if ((unsigned)s <= 4) {
         case UMOD:
         case MOD:
 rest:       loadexp(lhs);
-            gen(PUSH,lhs->op);
+            gen(PUSH,lhs->op,0,0);
             lddexp(rhs);
-            gen(op);
+            gen(op,0,0,0);
 #ifdef  REGCONTS
             setxreg(NULL);  /* clear X contents */
 #endif
@@ -373,7 +366,7 @@ out1: node->op = DREG;
 }
 
 
-isashift(x)
+int isashift(int x)
 {
     /* returns whether x is a suitable candidate for
     * shifting code in multiplication or division
@@ -390,8 +383,7 @@ isashift(x)
 }
 
 
-dobool(tree)
-register expnode *tree;
+int dobool(register expnode *tree)
 {
     /*  to evaluate expressions of the form "e1 <rel> e2",
         other than in tests */
@@ -408,7 +400,7 @@ register expnode *tree;
     /*  put in 'true' condition */
     uselabel(&l1);
     gen(LOAD,DREG,CONST,1);
-    gen(JMP,l1.labnum=getlabel(),1);
+    gen(JMP,l1.labnum=getlabel(),1,0);
 
     /* put in 'false' condition */
     uselabel(&l2);
@@ -423,9 +415,7 @@ register expnode *tree;
 }
 
 
-doquery(tree,loadfunc)
-register expnode *tree;
-int (*loadfunc)();
+int doquery(register expnode *tree, int (*loadfunc)(expnode *))
 {
     labstruc l1,l2;
 
@@ -445,7 +435,7 @@ int (*loadfunc)();
     /* and load the 'true' expression */
     (*loadfunc)(tree->left);
     /* then jump round the 'false' expression */
-    gen(JMP,l1.labnum=getlabel(),0);
+    gen(JMP,l1.labnum=getlabel(),0,0);
 
     /* put in the 'false' label */
     uselabel(&l2);
@@ -460,8 +450,7 @@ int (*loadfunc)();
 }
 
 
-docall(node)
-expnode *node;
+int docall(expnode *node)
 {
     register expnode *lhs,*rhs;
     int oldsp;
@@ -474,13 +463,13 @@ expnode *node;
             if (lhs->op == LCONST) pushcon(lhs);
             else {
                 lload(lhs);
-                gen(LONGOP,STACK);
+                gen(LONGOP,STACK,0,0);
             }
         }
 #ifdef DOFLOATS
         else if (isfloat(lhs)) {
             dload(lhs);
-            gen(DBLOP,STACK);
+            gen(DBLOP,STACK,0,0);
         }
 #endif
         else {
@@ -499,7 +488,7 @@ expnode *node;
 #endif
                     ;
             }
-            gen(PUSH,lhs->op);
+            gen(PUSH,lhs->op,0,0);
         }
     }
 
@@ -515,7 +504,7 @@ expnode *node;
         }
     }
 #endif
-    gen(CALL,NODE,node->left);
+    gen(CALL,NODE,node->left,0);
 
     sp = modstk(oldsp);
 
@@ -526,8 +515,7 @@ expnode *node;
 }
 
 
-isdleaf(node)
-register expnode *node;
+int isdleaf(register expnode *node)
 {
     expnode *p;
 
@@ -552,8 +540,7 @@ register expnode *node;
 }
 
 
-regandcon(p)
-register expnode *p;
+int regandcon(register expnode *p)
 {
     switch (p->op) {
         case PLUS:
@@ -564,15 +551,13 @@ register expnode *p;
 }
 
 
-isxleaf(node)
-register expnode *node;
+int isxleaf(register expnode *node)
 {
     return (node->sux<2);
 }
 
 
-isaddress(p)
-register expnode *p;
+int isaddress(register expnode *p)
 {
     switch (p->op) {
         case PLUS:
@@ -586,8 +571,7 @@ register expnode *p;
 }
 
 
-getinx(node)
-register expnode *node;
+int getinx(register expnode *node)
 {
     if (node->op & INDIRECT) {
         node->op&= NOTIND;
@@ -598,8 +582,7 @@ register expnode *node;
 }
 
 
-doass(node)
-register expnode *node;
+int doass(register expnode *node)
 {
     register expnode *lhs,*rhs,*savlhs;
 
@@ -672,9 +655,7 @@ register expnode *node;
 }
 
 
-expnode *
-transexp(tree)
-register expnode *tree;
+expnode * transexp(register expnode *tree)
 {
     switch (tree->op) {
         case STAR:
@@ -697,8 +678,7 @@ register expnode *tree;
 }
 
 
-assop(node,op)
-expnode *node;
+int assop(expnode *node, int op)
 {
     register expnode *lhs,*rhs;
 #ifdef REGCONTS
@@ -731,12 +711,12 @@ expnode *node;
                 } else {
                     lddexp(rhs);
                     if (op == MINUS) {
-                        gen(NEG);
+                        gen(NEG,0,0,0);
 #ifdef REGCONTS
                         setdreg(NULL);
 #endif
                     }
-                    gen(LEA,lhs->op,DREG);
+                    gen(LEA,lhs->op,DREG,0);
                 }
                 node->op = lhs->op;
                 node->val.num = 0;
@@ -746,9 +726,9 @@ expnode *node;
             case XOR:
                 goto ord;
             default:
-                gen(PUSH,lhs->op);
+                gen(PUSH,lhs->op,0,0);
                 lddexp(rhs);
-                gen(op);
+                gen(op,0,0,0);
         }
     } else {
 #ifdef REGCONTS
@@ -765,7 +745,7 @@ ord:
             setdreg(NULL);
         }
 #endif
-        if (lhs->type == CHAR) gen(CTOI);
+        if (lhs->type == CHAR) gen(CTOI,0,0,0);
         switch (op) {
             case AND:
             case OR:
@@ -790,18 +770,18 @@ ord:
 #endif
                     (lhs->op & NOTIND) != YIND
                         && (lhs->op & NOTIND) != UIND) stackx(lhs);
-                gen(PUSH,DREG);
+                gen(PUSH,DREG,0,0);
                 lddexp(rhs);
                 if (op == MINUS) op = RSUB;
-                gen(op,DREG,STACK);
+                gen(op,DREG,STACK,0);
         }
     }
 #ifdef REGCONTS
     if (inreg) {
         if (!isaleaf(lhs)) {
-            gen(PUSH,DREG);
+            gen(PUSH,DREG,0,0);
             transexp(lhs);
-            gen(LOAD,DREG,STACK);
+            gen(LOAD,DREG,STACK,0);
         } else transexp(lhs);
     }
 #endif
@@ -814,19 +794,17 @@ ord:
 }
 
 
-stackx(node)
-register expnode *node;
+int stackx(register expnode *node)
 {
     if ((node->op & NOTIND) == NAME) return;
     getinx(node);
     if(node->val.num) gen(LEA,XREG,CONST,node->val.num);
-    gen(PUSH,XREG);
+    gen(PUSH,XREG,0,0);
     node->op=STACK | INDIRECT;
 }
 
 
-dostar(node)
-register expnode *node;
+int dostar(register expnode *node)
 {
     register expnode *lhs;
     register int op;
@@ -923,9 +901,7 @@ fix:            node->val.sp = lhs->val.sp;
 }
 
 
-dotoggle(node,dest)
-register expnode *node;
-register int dest;
+int dotoggle(register expnode *node, register int dest)
 {
     register expnode *lhs;
     int op, size, reg;
@@ -1019,8 +995,7 @@ register int dest;
     shiftflag = 0;
 }
 
-loadxexp(p)
-register expnode *p;
+int loadxexp(register expnode *p)
 {
     tranxexp(p);
     if (p->op != XREG || p->val.num) {
@@ -1032,8 +1007,7 @@ register expnode *p;
     p->op = XREG;
 }
 
-tranxexp(node)
-expnode *node;
+int tranxexp(expnode *node)
 {
     register expnode *lhs,*rhs;
     int lhsval,rhsval,op,newop;
@@ -1095,12 +1069,12 @@ expnode *node;
                     lddexp(rhs);
                     tranxexp(lhs);
                     if (op == MINUS) {
-                        gen(NEG);
+                        gen(NEG,0,0,0);
 #ifdef REGCONTS
                         setdreg(NULL);
 #endif
                     }
-                    gen(LEAX,DREG,lhs->op);
+                    gen(LEAX,DREG,lhs->op,0);
 #ifdef REGCONTS
                     setxreg(node);
 #endif
@@ -1155,12 +1129,12 @@ expnode *node;
                 else {
                     lddexp(rhs);
                     if (op == MINUS) {
-                        gen(NEG,0,0);
+                        gen(NEG,0,0,0);
 #ifdef REGCONTS
                         setdreg(NULL);
 #endif
                     }
-done:               gen(LEAX,DREG,newop);
+done:               gen(LEAX,DREG,newop,0);
 #ifdef REGCONTS
                     setxreg(node);
 #endif
@@ -1181,7 +1155,7 @@ cant:       tranexp(node);
 }
 
 
-isreg(r)
+int isreg(int r)
 {
 #ifdef USE_YREG
     return (r==UREG || r==YREG);
@@ -1189,4 +1163,3 @@ isreg(r)
     return (r==UREG);
 #endif
 }
-

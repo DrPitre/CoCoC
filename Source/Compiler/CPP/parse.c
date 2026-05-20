@@ -170,7 +170,7 @@ newline()
 			strcpy(modname,inclptr->modname);
 			inclptr = inclptr->next;
 			putesc(NEWFNAME,filename,modname);
-			putesc(NEWLINO,lineno);
+			putesc(NEWLINO,LINEARG(lineno));
 		} else return 0;
 	}
 }

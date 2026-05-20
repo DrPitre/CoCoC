@@ -7,16 +7,15 @@
 */
 
 #include "cj.h"
-static ilist();
-static defobject();
-static datdef();
-static iskip();
+static int ilist(int, symnode *, dimnode *, int);
+static int defobject(int);
+static int datdef(cval_t, int);
+static int iskip(void);
 extern direct int stringlen;
 direct int datstring;
 
 
-initialise(ptr,tsc,type)
-register symnode *ptr;
+int initialise(register symnode *ptr, int tsc, int type)
 {
     register char *p;
     register dimnode *dimp;
@@ -77,10 +76,7 @@ out:
 
 #define INFINITY (-1)
 
-static 
-ilist(type,ptr,list,level)
-register symnode *ptr;
-register dimnode *list;
+static int ilist(int type, register symnode *ptr, register dimnode *list, int level)
 {
     register dimnode *newlist;
     int flag,t,i;
@@ -145,15 +141,14 @@ out:
 }
 
 
-zero(n)
+int zero(int n)
 {
-    ot("rzb ");
+    ot(lwflag ? "rmb " : "rzb ");
     od(n);
     nl();
 }
 
-static defobject(type)
-register int type;
+static int defobject(register int type)
 {
     register expnode *p, *p2;
     int addon, done, t;
@@ -239,9 +234,7 @@ finish:
 }
 
 
-static 
-datdef(p,type)
-register int *p;
+static int datdef(cval_t p, int type)
 {
     register int size;
 	int flt = 0;
@@ -250,7 +243,7 @@ register int *p;
         case CHAR:
         case UCHAR:
             defbyte();
-            od((int)p & 0xff);
+            od(p & 0xff);
             nl();
             return;
         case INT:
@@ -263,19 +256,18 @@ register int *p;
         case DOUBLE:    size = (DOUBLESIZE/2);  flt = 1; break;
 #endif
     }
-    defcon(p,size,flt);
+    defcon((int *)p,size,flt);
 }
 
 
-initerr()
+int initerr(void)
 {
     error("cannot initialize");
     iskip();
 }
 
 
-static
-iskip()
+static int iskip(void)
 {
     for (;;)
         switch (sym) {
@@ -287,4 +279,3 @@ iskip()
                 getsym();
         }
 }
-

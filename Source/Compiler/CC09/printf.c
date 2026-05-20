@@ -12,13 +12,13 @@
 #define direct
 #endif
 
-static _dofp(fmt,args);
-static itoa(n);
-static xtoa(n);
-static utoa(s,n);
-static putstr(s,len);
-static putstr1(s,len,len1);
-static putch(c);
+static int _dofp(char *fmt, int *args);
+static char *itoa(int n);
+static int xtoa(unsigned n);
+static char *utoa(char *s, int n);
+static int putstr(char *s, int len);
+static int putstr1(char *s, int len, int len1);
+static int putch(int c);
 
 #define DIGIT  107
 
@@ -37,9 +37,7 @@ static direct int leftflag,pad,flag;
 #define string  2
 
 #ifndef __unix__
-printf(fmt,args)
-char *fmt;
-int args;
+int printf(char *fmt, int args)
 {
     pointer=stdout;
     flag = file;
@@ -47,10 +45,7 @@ int args;
 }
 
 
-fprintf(f,fmt,args)
-char *fmt;
-FILE *f;
-int args;
+int fprintf(FILE *f, char *fmt, int args)
 {
     pointer=f;
     flag = file;
@@ -58,8 +53,7 @@ int args;
 }
 
 
-sprintf(s,fmt,args)
-char *s,*fmt;
+int sprintf(char *s, char *fmt, int args)
 {
     pointer = s;
     flag = string;
@@ -68,10 +62,7 @@ char *s,*fmt;
 }
 
 
-static 
-_dofp(fmt,args)
-register char *fmt;
-register int *args;
+static int _dofp(register char *fmt, register int *args)
 {
     char *ptr,c;
     int digits1,point,digits2;
@@ -134,8 +125,7 @@ register int *args;
 }
 
 
-static
-itoa(n)
+static char *itoa(int n)
 {
     char *p;
 
@@ -157,9 +147,7 @@ static int tens[] = {
 
 static direct int *tensend = &tens[4];
 
-static
-utoa(s,n)
-char *s;
+static char *utoa(char *s, int n)
 {
     register char *p;
     register int *ip;
@@ -190,9 +178,7 @@ char *s;
 }
 
 
-static
-xtoa(n)
-unsigned n;
+static int xtoa(unsigned n)
 {
     register char *p,*s1;
     int n1;
@@ -211,10 +197,7 @@ unsigned n;
 }
 
 
-static
-putstr(s,len)
-register int len;
-register char *s;
+static int putstr(register char *s, register int len)
 {
     int c;
 
@@ -228,10 +211,7 @@ register char *s;
 }
 
 
-static
-putstr1(s,len,len1)
-register char *s;
-register int len;
+static int putstr1(register char *s, register int len, int len1)
 {
     int padding = len1 - len;
 
@@ -247,8 +227,7 @@ register int len;
 }
 
 
-static
-putch(c)
+static int putch(int c)
 {
     if(flag == string)
         *pointer++ = c;

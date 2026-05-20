@@ -9,7 +9,9 @@
 #if defined(_OS9) || defined(_OSK) || defined(_OS9000)
 # define PARSER "/dd/lib/yaccpar"
 #else
+# ifndef PARSER
 # define PARSER "/usr/local/share/yacc/yaccpar"
+# endif
 #endif
 
 	/* basic size of the Yacc implementation */
