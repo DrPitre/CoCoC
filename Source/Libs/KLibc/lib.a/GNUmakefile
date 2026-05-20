@@ -14,10 +14,16 @@ OFILES = $(OFILES1) $(OFILES2) $(OFILES3) $(OFILES4) $(OFILES5) \
 	$(OFILES6) $(OFILES7)
 
 NFILES = atof.o scale.o ldexp.o frexp.o
+DCC_LONG_ABI_OFILES = atol.o fseek.o htol.o ltoa.o
 
 .DEFAULT_GOAL := main.lib
 
 include ../cmoc.make
+
+$(DCC_LONG_ABI_OFILES): %.o: %.a $(RMA2LW) $(TOP)/dcc-long-alias-asm.awk
+	$(O2U) < $< | $(SED) -f $(RMA2LW) | awk -f $(TOP)/dcc-long-alias-asm.awk > $*.s
+	$(LWASM) $(AFLAGS) --obj -o $@ $*.s
+	$(RM) $*.s
 
 printf.o: $(CMOC_OS9_LIB)/printf.c $(TOP)/cmoc-inline-asm-to-dcc.awk
 	$(O2U) < $< | awk -f $(TOP)/cmoc-inline-asm-to-dcc.awk > printf.dcc.c
