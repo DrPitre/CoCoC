@@ -25,6 +25,12 @@
 static direct int reguse;
 static direct struct initstruct *initlist,*initlast,*initfree;
 
+static int is_void_name(void)
+{
+    return sym == NAME
+            && strncmp(((symnode *) symval)->sname, "void", NAMESIZE) == 0;
+}
+
 static void skip_proto_list(void)
 {
     int level;
@@ -81,7 +87,7 @@ int extdef(void)
         ptr = ptemp;     /* decl ptr to register */
 
         if (ptr == NULL) {
-            if (temp != STRUCT && temp != UNION) identerr();
+            if (temp != STRUCT && temp != UNION && temp != USTRUCT) identerr();
             goto next;
         }
 /*
@@ -113,7 +119,7 @@ onlist:
             ssize = sizeup(ptr,tdp,size);
             if (!isftn(temp)) {
                 if (sym == ASSIGN) initialise(ptr,tsc,temp);
-                else if (ssize == 0 && tsc!=EXTERN) sizerr();
+                else if (ssize == 0 && tsc!=EXTERN && tsc!=TYPEDEF) sizerr();
                 else switch(tsc) {
                         case STATICD:
                         case STATIC:
@@ -236,7 +242,7 @@ int blkdef(void)
         temp = declarator(&ptemp,&tdp,type);
         ptr = ptemp;
         if (ptr == NULL) {
-            if (temp != STRUCT && temp != UNION) identerr();
+            if (temp != STRUCT && temp != UNION && temp != USTRUCT) identerr();
             goto next;
         }
         if (isftn(temp) || sclass == EXTERN) {
@@ -554,7 +560,7 @@ int declist(register symnode **list)
     *list = NULL;
     getsym();
 
-    if (istype()) {
+    if (istype() || is_void_name()) {
         skip_proto_list();
         return;
     }
@@ -816,6 +822,10 @@ next:
                     break;
                 }
         }
+    } else if (is_void_name()) {
+        type = INT;
+        tsize = INTSIZE;
+        getsym();
     } else if (sym == NAME) {
         ptr = (symnode *) symval;
         if (ptr->storage == TYPEDEF) {

@@ -331,7 +331,6 @@ int lexinit(void)
      install("char",CHAR);
      install("short",SHORT);
      install("long",LONG);
-     install("void",INT);
      mosflg=1; /* These keywords may appear inside struct defs */
      install("int",INT);
      install("char",CHAR);
@@ -339,7 +338,6 @@ int lexinit(void)
      install("long",LONG);
      install("signed", SIGN);
      install("unsigned",UNSIGN);
-     install("void",INT);
      install("const",QUAL);
      install("volatile",QUAL);
 #ifdef DOFLOATS
@@ -371,10 +369,18 @@ int lexinit(void)
 }
 
 
+static int keyword_prefix(char *name)
+{
+    return strcmp(name, "continue") == 0
+            || strcmp(name, "register") == 0
+            || strcmp(name, "unsigned") == 0
+            || strcmp(name, "volatile") == 0;
+}
+
 int getword(char *name)
 {
     char            str[NAMESIZE+1];
-    int             count;
+    int             count, extra;
     register char   *p = str;
 
     for (count = 1; an (cc) && count <= NAMESIZE; ++count) {
@@ -382,11 +388,13 @@ int getword(char *name)
         getch ();
     }
     *p = '\0';
+    extra = an(cc) ? cc : 0;
 
     if (!str[1]) {  /* name is 1 char */
         *name++ = UNIQUE;   /* prepend __ if it could be a register name */
         *name++ = UNIQUE;
     }
+    if (extra && keyword_prefix(str)) str[NAMESIZE-1] = extra;
     strcpy (name, str);
 
     while (an (cc)) getch ();
